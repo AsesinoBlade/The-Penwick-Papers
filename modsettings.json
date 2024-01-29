@@ -1,0 +1,205 @@
+{
+    "Version": "0.80",
+    "Sections": [
+        {
+            "Name": "Features",
+            "Description": "",
+            "IsAdvanced": false,
+            "Keys": [
+                {
+                    "Value": true,
+                    "Name": "EnhancedInfo",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "Herbalism",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "Trapping",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "LockpickMiniGame",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "DirtyTricks-Blinding",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "DirtyTricks-Chock",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "DirtyTricks-Diversion",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "DirtyTricks-TheBoot",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "DirtyTricks-Peep",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Options": [
+                        "<None>",
+                        "Steal",
+                        "Grab",
+                        "Info",
+                        "Talk"
+                    ],
+                    "Value": 0,
+                    "Name": "Mouse3",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.MultipleChoiceKey"
+                },
+                {
+                    "Options": [
+                        "<None>",
+                        "Steal",
+                        "Grab",
+                        "Info",
+                        "Talk"
+                    ],
+                    "Value": 0,
+                    "Name": "Mouse4",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.MultipleChoiceKey"
+                }
+            ],
+            "$version": "v1"
+        },
+        {
+            "Name": "Space1",
+            "Description": null,
+            "IsAdvanced": false,
+            "Keys": [],
+            "$version": "v1"
+        },
+        {
+            "Name": "Space2",
+            "Description": null,
+            "IsAdvanced": false,
+            "Keys": [],
+            "$version": "v1"
+        },
+        {
+            "Name": "Space3",
+            "Description": null,
+            "IsAdvanced": false,
+            "Keys": [],
+            "$version": "v1"
+        },
+        {
+            "Name": "Space4",
+            "Description": null,
+            "IsAdvanced": false,
+            "Keys": [],
+            "$version": "v1"
+        },
+        {
+            "Name": "Space5",
+            "Description": null,
+            "IsAdvanced": false,
+            "Keys": [],
+            "$version": "v1"
+        },
+        {
+            "Name": "Options",
+            "Description": "",
+            "IsAdvanced": false,
+            "Keys": [
+                {
+                    "Value": true,
+                    "Name": "TeleportMinions",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Options": [
+                        "Mute",
+                        "Low",
+                        "Medium",
+                        "Normal"
+                    ],
+                    "Value": 2,
+                    "Name": "MinionSoundVolume",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.MultipleChoiceKey"
+                },
+                {
+                    "Value": false,
+                    "Name": "StartGameWithPotionOfSeeking",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "LootAdjustment",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                }
+            ],
+            "$version": "v1"
+        },
+        {
+            "Name": "Advancement",
+            "Description": null,
+            "IsAdvanced": true,
+            "Keys": [
+                {
+                    "Value": false,
+                    "Name": "GoverningAttributes",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Min": 15,
+                    "Max": 20,
+                    "Value": 15,
+                    "Name": "SkillPerLevel",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
+                }
+            ],
+            "$version": "v1"
+        }
+    ]
+}

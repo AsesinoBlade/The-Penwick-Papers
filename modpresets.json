@@ -1,0 +1,12 @@
+[
+    {
+        "Title": "The Penwick Papers",
+        "Author": "DunnyOfPenwick",
+        "Description": "A collection of useful features, spells, and items",
+        "SettingsVersion": "0.82",
+        "Values": {
+
+        },
+        "$version": "v1"
+    }
+]
