@@ -15,6 +15,8 @@ using DaggerfallWorkshop.Game.UserInterfaceWindows;
 using DaggerfallWorkshop.Game.UserInterface;
 using DaggerfallWorkshop.Game.Items;
 using System.Reflection;
+using DaggerfallWorkshop.Game.Utility.ModSupport;
+
 
 namespace ThePenwickPapers
 {
@@ -745,6 +747,11 @@ namespace ThePenwickPapers
         /// </summary>
         static IEnumerator PeepDoor(RaycastHit hitInfo, DaggerfallActionDoor actionDoor)
         {
+            peeping = true;
+
+            ModManager.Instance.SendModMessage("ToolTips", "peeping", true);
+            DaggerfallUI.Instance.DaggerfallHUD.ShowCrosshair = false;
+
             Collider door = actionDoor.GetComponent<BoxCollider>();
 
             bool isCrouching = GameManager.Instance.PlayerMotor.IsCrouching;
@@ -778,8 +785,6 @@ namespace ThePenwickPapers
                 else
                     pos.z += hOffset;
             }
-
-            peeping = true;
 
             GameObject peeper = new GameObject("Penwick Peeper");
 
@@ -829,6 +834,9 @@ namespace ThePenwickPapers
 
             hud.ParentPanel.BackgroundTexture = originalBackgroundTexture;
             hud.ParentPanel.BackgroundTextureLayout = originalBackgroundLayout;
+            ModManager.Instance.SendModMessage("ToolTips", "peeping", false);
+            DaggerfallUI.Instance.DaggerfallHUD.ShowCrosshair = DaggerfallUnity.Settings.Crosshair;
+
 
             peeping = false;
         }
