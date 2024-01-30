@@ -70,6 +70,13 @@
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
                 },
                 {
+                    "Value": true,
+                    "Name": "KickBackCausesDamage",
+                    "Description": null,
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
                     "Options": [
                         "<None>",
                         "Steal",

@@ -26,7 +26,7 @@ namespace ThePenwickPapers
         public static int  Mouse4Mode;
         public static bool AddItems;
         public static bool AddSpells;
-
+        public static bool KickBackCausesDamage;
         public static bool AutoTeleportMinions;
         public static bool MinionsRegenerate;
         public static int MinionVolume = 2;
@@ -52,7 +52,7 @@ namespace ThePenwickPapers
             EnableEnhancedInfo = modSettings.GetBool(featuresSection, "EnhancedInfo");
 
             EnableHerbalism = modSettings.GetBool(featuresSection, "Herbalism");
-
+            KickBackCausesDamage = modSettings.GetBool(featuresSection, "KickBackCausesDamage");
             EnableTrapping = modSettings.GetBool(featuresSection, "Trapping");
 
             EnableLockpickGame = modSettings.GetBool(featuresSection, "LockpickMiniGame");

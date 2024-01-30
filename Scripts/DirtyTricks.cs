@@ -110,7 +110,8 @@ namespace ThePenwickPapers
             {
                 if (creature && hitInfo.distance <= bootRange && !GameManager.Instance.PlayerMotor.IsCrouching)
                 {
-                    if (!isShowingHandAnimation)
+                    var em = creature.GetComponent<EnemyMotor>();
+                    if (em.IsHostile && !isShowingHandAnimation)
                         AttemptBoot(creature);
 
                     return true;
@@ -695,6 +696,10 @@ namespace ThePenwickPapers
 
             if (Dice100.FailedRoll(hitChance))
                 return;
+
+            if (Settings.KickBackCausesDamage)
+                GameManager.Instance.WeaponManager.WeaponDamage(null, false, false, hit.transform, hit.point, GameManager.Instance.MainCamera.transform.forward);
+
 
             Vector3 playerVelocity = playerController.velocity;
             Vector3 direction = (victim.transform.position - playerMotor.transform.position).normalized;

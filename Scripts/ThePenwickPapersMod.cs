@@ -14,6 +14,7 @@ using DaggerfallWorkshop.Game.Serialization;
 using DaggerfallWorkshop.Game.Entity;
 using DaggerfallConnect;
 using DaggerfallWorkshop.Game.Formulas;
+using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
 
 
 namespace ThePenwickPapers
@@ -92,6 +93,10 @@ namespace ThePenwickPapers
             return potionOfSeekingRecipeKey;
         }
 
+        private void LoadSettings(ModSettings settings, ModSettingsChange change)
+        {
+            Settings.Init(Mod);
+        }
 
 
         /// <summary>
@@ -194,11 +199,15 @@ namespace ThePenwickPapers
 
             Mod.SaveDataInterface = Persistent;
 
-            Settings.Init(Mod);
+
+            //Settings.Init(Mod);
 
             firstPersonLightingMod = ModManager.Instance.GetMod("First-Person-Lighting");
 
             IsMonsterUniversityInstalled = (ModManager.Instance.GetMod("Monster-University") != null);
+
+            Mod.LoadSettingsCallback = LoadSettings;
+            Mod.LoadSettings();
 
             CreateSummoningEggTexture();
 
