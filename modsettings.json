@@ -21,11 +21,13 @@
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
                 },
                 {
-                    "Value": true,
-                    "Name": "Trapping",
-                    "Description": "See textdatabase.txt",
+                    "Min": 0,
+                    "Max": 50,
+                    "Value": 16,
+                    "Name": "MedicalNeededSkillForStartingHerbalism",
+                    "Description": "Medical Minimum starting skill to receive Mortar and Pestle as a starting item",
                     "$version": "v1",
-                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
                 },
                 {
                     "Value": true,

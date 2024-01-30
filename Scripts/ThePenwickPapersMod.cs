@@ -615,7 +615,7 @@ namespace ThePenwickPapers
             {
                 //give the player starting herbalism equipment if high enough medical skill
                 int medical = player.Skills.GetLiveSkillValue(DFCareer.Skills.Medical);
-                if (medical > 20)
+                if (medical >= Settings.MedicalNeededSkillForStartingHerbalism)
                 {
                     DaggerfallUnityItem item = ItemBuilder.CreateItem(ItemGroups.MiscellaneousIngredients2, MortarAndPestle.MortarAndPestleTemplateIndex);
                     player.Items.AddItem(item);

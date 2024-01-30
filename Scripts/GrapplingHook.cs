@@ -106,7 +106,7 @@ namespace ThePenwickPapers
             //up and over ledge
             anchorPoint += Vector3.up * 0.5f;
             ray = new Ray(anchorPoint, -effectiveNormal);
-            if (Physics.Raycast(ray, 0.1f))
+            if (Physics.Raycast(ray, 0.5f))
                 return Vector3.zero;
 
             anchorPoint -= effectiveNormal * 0.1f;

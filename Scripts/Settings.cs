@@ -15,6 +15,7 @@ namespace ThePenwickPapers
         //mod settings
         public static bool EnableEnhancedInfo;
         public static bool EnableHerbalism;
+        public static int MedicalNeededSkillForStartingHerbalism;
         public static bool EnableTrapping;
         public static bool EnableLockpickGame;
         public static bool EnableBlinding;
@@ -52,6 +53,7 @@ namespace ThePenwickPapers
             EnableEnhancedInfo = modSettings.GetBool(featuresSection, "EnhancedInfo");
 
             EnableHerbalism = modSettings.GetBool(featuresSection, "Herbalism");
+            MedicalNeededSkillForStartingHerbalism = modSettings.GetInt(featuresSection, "MedicalNeededSkillForStartingHerbalism");
             KickBackCausesDamage = modSettings.GetBool(featuresSection, "KickBackCausesDamage");
             EnableTrapping = modSettings.GetBool(featuresSection, "Trapping");
 
