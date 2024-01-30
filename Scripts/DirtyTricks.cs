@@ -56,6 +56,7 @@ namespace ThePenwickPapers
 
             if (creature)
             {
+                var em = creature.GetComponent<EnemyMotor>();
                 //If activating a creature, make sure it is a non-allied enemy entity.
                 //We don't want to do dirty tricks to allies or civilians.
                 if (creature.Entity.Team == MobileTeams.PlayerAlly)
@@ -63,7 +64,7 @@ namespace ThePenwickPapers
                 else if (!(creature.Entity is EnemyEntity))
                     return false;
 
-                if (GameManager.Instance.WeaponManager.Sheathed)
+                if (!em.IsHostile || GameManager.Instance.WeaponManager.Sheathed)
                     return false; //Weapon must be readied
             }
 
