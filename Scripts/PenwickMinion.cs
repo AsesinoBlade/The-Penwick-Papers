@@ -36,6 +36,7 @@ namespace ThePenwickPapers
         Vector3 lastSeenPlayerPosition;
         float lastEquipTime;
         float lastQuestTargetCheckTime;
+        float lastRegenerateTime;
         IEnumerator pushRoutine;
 
 
@@ -74,6 +75,7 @@ namespace ThePenwickPapers
         public static List<PenwickMinion> GetMinions()
         {
             int removed = minions.RemoveAll(item => item == null);
+            removed += minions.RemoveAll(item => item.gameObject.activeInHierarchy == false);
 
             return new List<PenwickMinion>(minions);
         }
@@ -104,24 +106,17 @@ namespace ThePenwickPapers
 
 
         /// <summary>
-        /// Restore health and magicka of some minions after long rest (7 hours or so).
-        /// Currently only lich minions can restore health by resting.
+        /// Restore health and magicka of minions after long rest (7 hours or so).
         /// </summary>
         public static void Rest()
         {
             foreach (PenwickMinion minion in GetMinions())
             {
                 EnemyEntity entity = minion.behaviour.Entity as EnemyEntity;
-                MobileEnemy mobileEnemy = entity.MobileEnemy;
 
                 entity.CurrentMagicka = entity.MaxMagicka;
                 entity.CurrentFatigue = entity.MaxFatigue;
-
-                //Only liches can heal on their own, not other undead or atronachs
-                if (mobileEnemy.ID == (int)MobileTypes.Lich || mobileEnemy.ID == (int)MobileTypes.AncientLich)
-                {
-                    entity.CurrentHealth = entity.MaxHealth;
-                }
+                entity.CurrentHealth = entity.MaxHealth;
             }
         }
 
@@ -138,8 +133,14 @@ namespace ThePenwickPapers
             {
                 if (MaintainControl(minion))
                 {
-                    //perform movement and other minion activities
+                    //Perform movement and other minion activities.
                     minion.Guide();
+
+                    if (Settings.MinionsRegenerate)
+                    {
+                        //Gradually regenerate health/magicka/fatigue.
+                        minion.Regenerate();
+                    }
                 }
             }
         }
@@ -189,15 +190,18 @@ namespace ThePenwickPapers
                 else
                 {
                     //Remove minion status for any minions that have turned on the player
+                    minions.Remove(minion);
                     minion.SetMinionObjectName();
                     minion.senses.SightRadius = 50f;
                     minion.senses.HearingRadius = 25f;
                     minion.audioSource.volume = DaggerfallUnity.Settings.SoundVolume;
-                    GameObject.Destroy(minion.proxyTarget.gameObject);
-                    GameObject.Destroy(minion); //remove minion component of GameObject
-
                     string entityName = TextManager.Instance.GetLocalizedEnemyName(entity.MobileEnemy.ID);
                     Utility.AddHUDText(Text.MinionGoesRenegade.Get(entityName));
+
+                    minion.senses.enabled = true; //...in case normal code disabled them.
+
+                    GameObject.Destroy(minion.proxyTarget.gameObject);
+                    GameObject.Destroy(minion); //remove minion component of GameObject
 
                     return false;
                 }
@@ -285,9 +289,9 @@ namespace ThePenwickPapers
 
 
         /// <summary>
-        /// Check if there is a clear path from location1 to location2 (exluding doors)
+        /// Check if there is a clear path from location1 to location2 (optionally excluding doors)
         /// </summary>
-        static bool HasPath(Vector3 location1, Vector3 location2)
+        static bool HasPath(Vector3 location1, Vector3 location2, bool ignoreDoors = true)
         {
             float distance = Vector3.Distance(location1, location2);
 
@@ -298,7 +302,7 @@ namespace ThePenwickPapers
             if (Physics.Raycast(location1, direction, out RaycastHit hit, distance, layerMask))
             {
                 //if it's a door, we ignore it
-                return (hit.collider.GetComponent<DaggerfallActionDoor>() != null);
+                return (ignoreDoors && hit.collider.GetComponent<DaggerfallActionDoor>() != null);
             }
 
             return true;
@@ -427,22 +431,40 @@ namespace ThePenwickPapers
                 //move toward the invisible push target
                 senses.Target = null;
                 motor.MakeEnemyHostileToAttacker(proxyTarget);
+                senses.enabled = false;
             }
             else if (isFollower)
             {
                 DoFollow();
             }
 
-            //set sound volume of minion; gets continuously called in case other parts of the game revert it to default
+            //Set sound volume of minion; gets continuously called in case other game code reverts it to default.
             SetMinionVolume();
 
-            //try to periodically pick up and/or equip better items
+            //Try to periodically pick up and/or equip better items.
             CheckEquipment();
 
-            //periodically check if quest target enemies are nearby, and allow minions to attack them
+            //Periodically check if quest target enemies are nearby, and allow minions to attack them.
             MakeQuestTargetsAttackable();
         }
 
+
+        /// <summary>
+        /// Magical and Undead minions will slowly regenerate health/fatigue/magicka.
+        /// </summary>
+        void Regenerate()
+        {
+            EnemyEntity entity = behaviour.Entity as EnemyEntity;
+
+            if (lastRegenerateTime < Time.time - 10)
+            {
+                lastRegenerateTime = Time.time;
+                entity.IncreaseHealth(1);
+                entity.IncreaseFatigue(1);
+                entity.IncreaseMagicka(1);
+            }
+
+        }
 
 
         /// <summary>
@@ -458,7 +480,11 @@ namespace ThePenwickPapers
             senses.SecondaryTarget = null;
             senses.WouldBeSpawnedInClassic = false; //to make passive enemies somewhat less aggressive towards minion
 
-            if (senses.Target == null)
+            if (senses.enabled == false && Time.frameCount % 20 == 0 && TargetNearbyEnemies())
+            {
+                senses.enabled = true;
+            }
+            else if (senses.Target == null)
             {
                 if (playerDistance > followDistance)
                     StartFollowPlayer();
@@ -466,9 +492,17 @@ namespace ThePenwickPapers
             else if (senses.Target == proxyTarget)
             {
                 if (playerDistance <= followDistance)
+                {
                     senses.Target = null;
-                else if (Random.Range(0, 100) == 1)
-                    StartFollowPlayer(); //refresh proxy target periodically
+                    senses.SecondaryTarget = null;
+                    senses.OldLastKnownTargetPos = EnemySenses.ResetPlayerPos;
+                    senses.LastKnownTargetPos = EnemySenses.ResetPlayerPos;
+                    senses.PredictedTargetPos = EnemySenses.ResetPlayerPos;
+                }
+                else
+                {
+                    StartFollowPlayer();
+                }
             }
             else
             {
@@ -488,7 +522,7 @@ namespace ThePenwickPapers
             }
 
             //If player too far away, wait for player to look away from minion, then teleport behind them
-            if (playerDistance > 25 && Settings.AutoTeleportMinions)
+            if (playerDistance > 15 && Settings.AutoTeleportMinions)
             {
                 Vector3 playerDirection = (player.transform.position - transform.position).normalized;
                 float signedAngle = Vector3.SignedAngle(playerDirection, player.transform.forward, Vector3.up);
@@ -504,43 +538,75 @@ namespace ThePenwickPapers
 
             if (senses.Target == proxyTarget)
             {
-                //The proxy is completely invisible.
+                //The proxy is completely invisible/inactive.
                 //This is a hack to enable minion to be aware of it in EnemySenses logic.
-                senses.HearingRadius = 100;
+                senses.HearingRadius = 20;
                 senses.DetectedTarget = true;
             }
-            else
-            {
-                //Otherwise, keep hearing radius lower so minion isn't constantly
-                //chasing enemies through walls
-                senses.HearingRadius = 4;
-            }
-
         }
+
 
         /// <summary>
         /// Called by DoFollow() to have a minion start following the PC.
         /// </summary>
         void StartFollowPlayer()
         {
+            //Prevent minion from getting distracted while following.
+            senses.enabled = false;
+
             proxyTarget.transform.position = lastSeenPlayerPosition;
             Vector3 direction = (lastSeenPlayerPosition - transform.position).normalized;
             proxyTarget.transform.position += direction; //move a bit beyond last seen position, e.g. through door
 
-            senses.Target = null;
-            motor.MakeEnemyHostileToAttacker(proxyTarget);
+            senses.Target = proxyTarget;
+            senses.SecondaryTarget = senses.Target;
+            senses.OldLastKnownTargetPos = proxyTarget.transform.position;
+            senses.LastKnownTargetPos = proxyTarget.transform.position;
+            senses.PredictedTargetPos = proxyTarget.transform.position;
+            motor.GiveUpTimer = 200;
         }
 
 
+        bool TargetNearbyEnemies()
+        {
+            float targetDistance = 100f;
+
+            List<DaggerfallEntityBehaviour> nearby = Utility.GetNearbyEntities(motor.transform.position, 10);
+            foreach (DaggerfallEntityBehaviour enemy in nearby)
+            {
+                if (enemy.Entity.Team == MobileTeams.PlayerAlly)
+                    continue;
+
+                if (enemy.EntityType == EntityTypes.Player)
+                    continue;
+
+                EnemyMotor enemyMotor = enemy.GetComponent<EnemyMotor>();
+                if (enemyMotor && !enemyMotor.IsHostile)
+                    continue;
+
+                if (!CanSee(enemy.transform.position, false))
+                    continue;
+
+                float distance = Vector3.Distance(enemy.transform.position, motor.transform.position);
+                if (distance < targetDistance)
+                {
+                    senses.Target = enemy;
+                    targetDistance = distance;
+                }
+            }
+
+            return senses.Target != null;
+        }
+
 
         /// <summary>
-        /// Check if minion can see destination (no terrain blockage, except doors)
+        /// Check if minion can see destination (no terrain blockage, except possibly doors)
         /// </summary>
-        bool CanSee(Vector3 destination)
+        bool CanSee(Vector3 destination, bool ignoreDoors = true)
         {
             Vector3 eyePosition = transform.position + Vector3.up * 0.7f;
 
-            return HasPath(eyePosition, destination);
+            return HasPath(eyePosition, destination, ignoreDoors);
         }
 
 
@@ -602,7 +668,7 @@ namespace ThePenwickPapers
             }
             else
             {
-                proxyTarget.transform.position = transform.position + (pushDirection * 4);
+                proxyTarget.transform.position = transform.position + (pushDirection * 5);
             }
 
             isBeingPushed = true;

@@ -23,7 +23,7 @@
         "index": 1772,
         "name": "Mortar & Pestle",
         "baseWeight": 0.38,
-        "hitPoints": 10,
+        "hitPoints": 20,
         "capacityOrTarget": 0,
         "basePrice": 75,
         "enchantmentPoints": 0,
@@ -38,5 +38,25 @@
         "worldTextureRecord": 1772,
         "playerTextureArchive": 0,
         "playerTextureRecord": 0
-    }
+    },
+    {
+        "index": 1771,
+        "name": "Hook & Rope",
+        "baseWeight": 4.5,
+        "hitPoints": 80,
+        "capacityOrTarget": 0,
+        "basePrice": 155,
+        "enchantmentPoints": 0,
+        "rarity": 5,
+        "variants": 0,
+        "drawOrderOrEffect": 0,
+        "isBluntWeapon": false,
+        "isLiquid": false,
+        "isOneHanded": false,
+        "isIngredient": false,
+        "worldTextureArchive": 214,
+        "worldTextureRecord": 1771,
+        "playerTextureArchive": 0,
+        "playerTextureRecord": 0
+    },
 ]

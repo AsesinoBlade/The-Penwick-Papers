@@ -71,6 +71,12 @@ namespace ThePenwickPapers
         LostInSmallTownNight,
         LostInDark,
 
+        //Summon Imp
+        SummonImpGroupName,
+        SummonImpEffectDescription,
+        SummonImpSpellMakerChance,
+        SummonImpSpellBookChance,
+
         //Create Atronach
         CreateAtronachGroupName,
         CreateAtronachDisplayName,
@@ -164,6 +170,9 @@ namespace ThePenwickPapers
         DoorChocked,
         DoorUnchocked,
 
+        //Hook And Rope Item
+        HookAndRope,
+        HookAndRopeUsage,
 
         //Herbalism
         MortarAndPestle,
@@ -174,9 +183,6 @@ namespace ThePenwickPapers
         NotNecessary,
         PatientSuffersFromPoisoning,
         YouSufferFromPoisoning,
-        PoisonCompletelyNeutralized,
-        PoisonPartiallyNeutralized,
-        PoisonNeutralizeMuchRemains,
         RecoverFatigue,
         RegenerateHealth,
         RecoverMagicka,

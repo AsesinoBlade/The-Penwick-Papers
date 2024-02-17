@@ -11,6 +11,9 @@ using DaggerfallConnect;
 using DaggerfallWorkshop.Utility.AssetInjection;
 using DaggerfallWorkshop.Utility;
 using DaggerfallWorkshop.Game.Entity;
+using DaggerfallWorkshop.Game.Formulas;
+using DaggerfallWorkshop.Game.Utility;
+
 
 namespace ThePenwickPapers
 {
@@ -24,7 +27,9 @@ namespace ThePenwickPapers
         static Collider doorCollider;
 
         readonly Color dimColor = new Color(0, 0, 0, 0.5f);
+
         readonly Panel mainPanel = new Panel();
+        readonly Panel lightingPanel = new Panel();
         readonly Panel tumblerPlatePanel = new Panel();
         readonly Panel keyholePlatePanel = new Panel();
         readonly Panel keyholePanel = new Panel();
@@ -63,6 +68,8 @@ namespace ThePenwickPapers
             if (hit.distance > PlayerActivate.DoorActivationDistance)
                 return false;
 
+            StaticBuilding building = new StaticBuilding();
+
             actionDoor = hit.collider.gameObject.GetComponent<DaggerfallActionDoor>();
             if (actionDoor)
             {
@@ -78,7 +85,7 @@ namespace ThePenwickPapers
                     return true;
                 }
             }
-            else if (!HitLockedStaticBuildingDoor(hit))
+            else if (!HitLockedStaticBuildingDoor(hit, out building))
             {
                 return false;
             }
@@ -89,7 +96,33 @@ namespace ThePenwickPapers
                 return true;
             }
 
+            //Sheath weapons when attempting to pick locks.
+            GameManager.Instance.WeaponManager.SheathWeapons();
+
             doorCollider = hit.collider;
+
+            int lockpickSkill = GameManager.Instance.PlayerEntity.Skills.GetLiveSkillValue(DFCareer.Skills.Lockpicking);
+
+            if (actionDoor)
+            {
+                int result = AttemptQuickPick(actionDoor);
+                if (result == 1)
+                    return true;
+                else if (result == 0 && lockpickSkill < 10)
+                    DaggerfallUI.Instance.PopupMessage(TextManager.Instance.GetLocalizedText("lockpickingFailure"));
+            }
+            else
+            {
+                int result = AttemptQuickPick(building);
+                if (result == 1)
+                    return true;
+                else if (result == 0 && lockpickSkill < 10)
+                    DaggerfallUI.Instance.PopupMessage(TextManager.Instance.GetLocalizedText("lockpickingFailure"));
+            }
+
+            //Only showing lockpick minigame window if PC has at least 10 lockpick skill.
+            if (lockpickSkill < 10)
+                return true;
 
             IUserInterfaceManager uiManager = DaggerfallUI.UIManager;
             if (!(uiManager.TopWindow is LockpickWindow))
@@ -106,13 +139,15 @@ namespace ThePenwickPapers
         /// Logic taken from PlayerActivate.
         /// Checks if player is clicking on an exterior locked door.
         /// </summary>
-        static bool HitLockedStaticBuildingDoor(RaycastHit hit)
+        static bool HitLockedStaticBuildingDoor(RaycastHit hit, out StaticBuilding building)
         {
             PlayerActivate playerActivate = GameManager.Instance.PlayerActivate;
 
+            building = new StaticBuilding();
+
             // Check for a static building hit
             DaggerfallStaticBuildings buildings = playerActivate.GetBuildings(hit.transform, out _);
-            if (buildings && buildings.HasHit(hit.point, out StaticBuilding building))
+            if (buildings && buildings.HasHit(hit.point, out building))
             {
                 // Get building directory for location
                 BuildingDirectory buildingDirectory = GameManager.Instance.StreamingWorld.GetCurrentBuildingDirectory();
@@ -128,6 +163,8 @@ namespace ThePenwickPapers
 
                 //In the base game, lock value is half of building quality.  We will make it harder for the minigame.
                 lockValue = buildingSummary.Quality;
+                if (lockValue >= 20)
+                    lockValue = 19;
             }
             else
             {
@@ -156,6 +193,123 @@ namespace ThePenwickPapers
         }
 
 
+        static int AttemptQuickPick(DaggerfallActionDoor actionDoor)
+        {
+            //Interior Door.  This logic pulled from DaggerfallActionDoor.AttemptLockpicking()
+
+            PlayerEntity player = GameManager.Instance.PlayerEntity;
+
+            // If player fails at their current lockpicking skill level, they can't try again
+            if (actionDoor.FailedSkillLevel == player.Skills.GetLiveSkillValue(DFCareer.Skills.Lockpicking))
+            {
+                //Not allowed another quick-pick attempt until skill gained.
+                PlayerActivate.LookAtInteriorLock(lockValue);
+                return 2; 
+            }
+
+            player.TallySkill(DFCareer.Skills.Lockpicking, 1);
+
+            int chance = FormulaHelper.CalculateInteriorLockpickingChance(player.Level, lockValue, player.Skills.GetLiveSkillValue(DFCareer.Skills.Lockpicking));
+
+            if (Dice100.FailedRoll(chance))
+            {
+                actionDoor.FailedSkillLevel = player.Skills.GetLiveSkillValue(DFCareer.Skills.Lockpicking);
+
+                return 0;
+            }
+            else
+            {
+                DaggerfallUI.Instance.PopupMessage(TextManager.Instance.GetLocalizedText("lockpickingSuccess"));
+                actionDoor.CurrentLockValue = 0;
+
+                DaggerfallAudioSource dfAudioSource = GameManager.Instance.PlayerObject.GetComponent<DaggerfallAudioSource>();
+                if (dfAudioSource != null)
+                    dfAudioSource.PlayOneShot(SoundClips.ActivateLockUnlock);
+
+                actionDoor.ToggleDoor(true);
+
+                return 1;
+            }
+
+        }
+
+
+        static int AttemptQuickPick(StaticBuilding building)
+        {
+            PlayerEntity player = GameManager.Instance.PlayerEntity;
+
+            //Exterior Door.  This logic pulled from PlayerActivate.ActivateStaticDoor
+
+            // Reject if player has already failed this building at current skill level
+            int skillValue = player.Skills.GetLiveSkillValue(DFCareer.Skills.Lockpicking);
+            int lastAttempt = GameManager.Instance.PlayerGPS.GetLastLockpickAttempt(building.buildingKey);
+            if (skillValue <= lastAttempt)
+            {
+                //Not allowed another quick-pick attempt until more skill gained.
+                PlayerActivate.LookAtInteriorLock(lockValue);
+                return 2;
+            }
+
+            // Attempt to unlock building
+            Random.InitState(Time.frameCount);
+            player.TallySkill(DFCareer.Skills.Lockpicking, 1);
+            int chance = FormulaHelper.CalculateExteriorLockpickingChance(lockValue, skillValue);
+            int roll = Random.Range(1, 101);
+            Debug.LogFormat("Attempting pick against lock strength {0}. Chance={1}, Roll={2}.", lockValue, chance, roll);
+            if (chance <= roll)
+            {
+                // Show failure and record attempt skill level in discovery data
+                // Have not been able to create a guard response in classic, even when early morning NPCs are nearby
+                // Assuming for now that exterior lockpicking is discrete enough that no response on failure is required
+                GameManager.Instance.PlayerGPS.SetLastLockpickAttempt(building.buildingKey, skillValue);
+
+                return 0;
+            }
+
+
+            // Show success and play unlock sound
+            player.TallyCrimeGuildRequirements(true, 1);
+            DaggerfallUI.Instance.PopupMessage(TextManager.Instance.GetLocalizedText("lockpickingSuccess"));
+            DaggerfallAudioSource dfAudioSource = GameManager.Instance.PlayerObject.GetComponent<DaggerfallAudioSource>();
+            if (dfAudioSource != null)
+                dfAudioSource.PlayOneShot(SoundClips.ActivateLockUnlock);
+
+            // Hit door while outside, transition inside
+            TransitionInterior(doorOwner, staticDoor, true);
+
+            return 1;
+        }
+
+
+        // Custom transition to store building data before entering building.
+        // Note: Logic copied from PlayerActivate.
+        static void TransitionInterior(Transform doorOwner, StaticDoor door, bool doFade = false)
+        {
+            PlayerEnterExit playerEnterExit = GameManager.Instance.PlayerEnterExit;
+
+            // Get building directory for location
+            BuildingDirectory buildingDirectory = GameManager.Instance.StreamingWorld.GetCurrentBuildingDirectory();
+            if (!buildingDirectory)
+            {
+                Debug.LogError("LockpickWindow.TransitionInterior() could not retrieve BuildingDirectory.");
+                return;
+            }
+
+            // Get building discovery data - this is added when player clicks door at exterior
+            if (!GameManager.Instance.PlayerGPS.GetDiscoveredBuilding(door.buildingKey, out PlayerGPS.DiscoveredBuilding db))
+            {
+                Debug.LogErrorFormat("LockpickWindow.TransitionInterior() could not retrieve DiscoveredBuilding for key {0}.", door.buildingKey);
+                return;
+            }
+
+            // Perform transition
+            playerEnterExit.BuildingDiscoveryData = db;
+            playerEnterExit.IsPlayerInsideOpenShop = RMBLayout.IsShop(db.buildingType) && PlayerActivate.IsBuildingOpen(db.buildingType);
+            playerEnterExit.IsPlayerInsideTavern = RMBLayout.IsTavern(db.buildingType);
+            playerEnterExit.IsPlayerInsideResidence = RMBLayout.IsResidence(db.buildingType);
+            playerEnterExit.TransitionInterior(doorOwner, door, doFade, false);
+        }
+
 
         public LockpickWindow(IUserInterfaceManager uiManager) : base(uiManager)
         {
@@ -169,9 +323,6 @@ namespace ThePenwickPapers
         protected override void Setup()
         {
             base.Setup();
-
-            //Make sure we've stopped swallowing activation actions
-            ThePenwickPapersMod.StopSwallowingActions();
 
             dfAudioSource = GameManager.Instance.PlayerObject.GetComponent<DaggerfallAudioSource>();
 
@@ -188,44 +339,41 @@ namespace ThePenwickPapers
 
             Texture2D texture;
 
+            NativePanel.Components.Add(mainPanel);
+
             mainPanel.HorizontalAlignment = HorizontalAlignment.Center;
             mainPanel.VerticalAlignment = VerticalAlignment.Middle;
             texture = Assets.LockPickPanel.Get<Texture2D>();
             mainPanel.BackgroundTexture = texture;
             mainPanel.Size = new Vector2(texture.width, texture.height);
-            
-            NativePanel.Components.Add(mainPanel);
 
+            mainPanel.Components.Add(tumblerPlatePanel);
             texture = Assets.LockPickPlate.Get<Texture2D>();
             tumblerPlatePanel.BackgroundTexture = texture;
             tumblerPlatePanel.Size = new Vector2(texture.width, texture.height);
             tumblerPlatePanel.Position = new Vector2(5, 4);
             lockpickPlateRect = new Rect(tumblerPlatePanel.Position, tumblerPlatePanel.Size);
-            
-            mainPanel.Components.Add(tumblerPlatePanel);
 
             //Add black panel behind keyhole graphic
+            mainPanel.Components.Add(keyholePanel);
             keyholePanel.BackgroundColor = Color.black;
             keyholePanel.Size = new Vector2(12, 28);
             keyholePanel.Position = new Vector2(130, 32);
 
-            mainPanel.Components.Add(keyholePanel);
-
             //Add green progress bar on top of black keyhole panel
+            keyholePanel.Components.Add(keyholeProgessPanel);
             keyholeProgessPanel.Size = new Vector2(keyholePanel.Size.x, 0);
             keyholeProgessPanel.HorizontalAlignment = HorizontalAlignment.Center;
             keyholeProgessPanel.VerticalAlignment = VerticalAlignment.Bottom;
             keyholeProgessPanel.BackgroundColor = new Color(0f, 0.8f, 0f);
 
-            keyholePanel.Components.Add(keyholeProgessPanel);
-
             //Overlay the keyhole panel and progress bar with the keyhole graphic
+            mainPanel.Components.Add(keyholePlatePanel);
             texture = Assets.KeyholePlate.Get<Texture2D>();
             keyholePlatePanel.BackgroundTexture = texture;
             keyholePlatePanel.Size = new Vector2(texture.width, texture.height);
             keyholePlatePanel.Position = new Vector2(114, 21);
 
-            mainPanel.Components.Add(keyholePlatePanel);
 
             //Add semi-transparent overlay panels for the arrow 'buttons'
             for (int i = 0; i < arrowButtonOverlays.Length; ++i)
@@ -233,12 +381,26 @@ namespace ThePenwickPapers
                 arrowButtonOverlays[i] = new Panel
                 {
                     BackgroundColor = dimColor,
-                    Size = new Vector2(18, 16),
+                    Size = new Vector2(18, 17),
                     Position = new Vector2(11 + i * 23, 63)
                 };
 
                 mainPanel.Components.Add(arrowButtonOverlays[i]);
             }
+
+            //Adds panel on top to tint the window to match local lighting
+            mainPanel.Components.Add(lightingPanel);
+            lightingPanel.Size = new Vector2(1, 1);
+            lightingPanel.AutoSize = AutoSizeModes.ScaleFreely;
+        }
+
+
+        public override void OnPop()
+        {
+            base.OnPop();
+
+            //Make sure we've stopped swallowing activation actions
+            ThePenwickPapersMod.StopSwallowingActions();
         }
 
 
@@ -251,6 +413,8 @@ namespace ThePenwickPapers
                 CloseWindow();
                 return;
             }
+
+            AdjustLighting();
 
             CheckMovementKeys();
 
@@ -267,6 +431,12 @@ namespace ThePenwickPapers
                 AudioClip clip = lockpickTinker[Random.Range(0, lockpickTinker.Length)];
                 dfAudioSource.AudioSource.PlayOneShot(clip);
             }
+        }
+
+
+        public override void Draw()
+        {
+            base.Draw();
         }
 
 
@@ -310,6 +480,15 @@ namespace ThePenwickPapers
         }
 
 
+        void AdjustLighting()
+        {
+            Color tint = ThePenwickPapersMod.Instance.GetEntityLighting(GameManager.Instance.PlayerEntityBehaviour);
+
+            float shade = Mathf.Clamp(0.9f - tint.grayscale, 0.1f, 1f);
+
+            lightingPanel.BackgroundColor = new Color(0, 0, 0, shade);
+        }
+
 
         /// <summary>
         /// Check for movement keys to activate tumblers.
@@ -334,11 +513,17 @@ namespace ThePenwickPapers
                             EvaluateAction(action);
                         }
                         break;
-                    case InputManager.Actions.Escape:
-                        CloseWindow();
-                        break;
-                    case InputManager.Actions.ActivateCursor:
+                    case InputManager.Actions.RecastSpell:
+                    case InputManager.Actions.ActivateCenterObject:
                         InputManager.Instance.ClearAllActions();
+                        break;
+                    case InputManager.Actions.Sneak:
+                    case InputManager.Actions.Run:
+                    case InputManager.Actions.PrintScreen:
+                    case InputManager.Actions.Crouch:
+                        break;
+                    default:
+                        CloseWindow();
                         break;
                 }
 
@@ -460,7 +645,7 @@ namespace ThePenwickPapers
             PlayerEntity player = GameManager.Instance.PlayerEntity;
 
             //The reflex value was chosen by the player during character creation.
-            float reflexModifier = 800 - (int)player.Reflexes * 100;
+            float reflexModifier = 750 - (int)player.Reflexes * 100;
             int skill = player.Skills.GetLiveSkillValue(DFCareer.Skills.Lockpicking);
             float speed = Time.smoothDeltaTime * reflexModifier / Mathf.Sqrt(skill);
 
@@ -527,35 +712,6 @@ namespace ThePenwickPapers
         }
 
 
-
-        // Custom transition to store building data before entering building.
-        // Note: Logic copied from PlayerActivate.
-        void TransitionInterior(Transform doorOwner, StaticDoor door, bool doFade = false)
-        {
-            PlayerEnterExit playerEnterExit = GameManager.Instance.PlayerEnterExit;
-
-            // Get building directory for location
-            BuildingDirectory buildingDirectory = GameManager.Instance.StreamingWorld.GetCurrentBuildingDirectory();
-            if (!buildingDirectory)
-            {
-                Debug.LogError("LockpickWindow.TransitionInterior() could not retrieve BuildingDirectory.");
-                return;
-            }
-
-            // Get building discovery data - this is added when player clicks door at exterior
-            if (!GameManager.Instance.PlayerGPS.GetDiscoveredBuilding(door.buildingKey, out PlayerGPS.DiscoveredBuilding db))
-            {
-                Debug.LogErrorFormat("LockpickWindow.TransitionInterior() could not retrieve DiscoveredBuilding for key {0}.", door.buildingKey);
-                return;
-            }
-
-            // Perform transition
-            playerEnterExit.BuildingDiscoveryData = db;
-            playerEnterExit.IsPlayerInsideOpenShop = RMBLayout.IsShop(db.buildingType) && PlayerActivate.IsBuildingOpen(db.buildingType);
-            playerEnterExit.IsPlayerInsideTavern = RMBLayout.IsTavern(db.buildingType);
-            playerEnterExit.IsPlayerInsideResidence = RMBLayout.IsResidence(db.buildingType);
-            playerEnterExit.TransitionInterior(doorOwner, door, doFade, false);
-        }
 
 
 

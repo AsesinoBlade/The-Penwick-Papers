@@ -328,7 +328,14 @@ namespace ThePenwickPapers
                 return true;
 
             ItemEquipTable equipTable = GameManager.Instance.PlayerEntity.ItemEquipTable;
-            return equipTable.IsSlotOpen(EquipSlots.LeftHand) || equipTable.IsSlotOpen(EquipSlots.RightHand);
+            if (equipTable.IsSlotOpen(EquipSlots.LeftHand))
+                return true;
+            else if (equipTable.IsSlotOpen(EquipSlots.RightHand))
+                return true;
+            else if (Settings.RelaxFreeHandRestriction && !equipTable.GetItem(EquipSlots.LeftHand).IsShield)
+                return true;
+            else
+                return false;
         }
 
 

@@ -59,10 +59,17 @@ namespace ThePenwickPapers
             Vector3 destination = locations[index].Position;
 
             PlayerMotor playerMotor = GameManager.Instance.PlayerMotor;
-            float distance = playerMotor.DistanceToPlayer(destination);
 
             bool isInside = GameManager.Instance.PlayerEnterExit.IsPlayerInside;
-            
+
+            if (!isInside)
+            {
+                //Sometimes the y is way off.  This often happens when using terrain mods.
+                destination.y = GameManager.Instance.PlayerObject.transform.position.y;
+            }
+
+            float distance = playerMotor.DistanceToPlayer(destination);
+
             bool isRiding = false;
 
             if (distance > 5)
@@ -70,7 +77,10 @@ namespace ThePenwickPapers
                 DaggerfallUI.Instance.FadeBehaviour.SmashHUDToBlack();
 
                 playerMotor.transform.position = destination;
-                playerMotor.FixStanding(2, 5);
+
+                //Sometimes the y is way off.  This often happens when using terrain mods.
+                if (!playerMotor.FixStanding(2, 5))
+                    playerMotor.FixStanding(200, 500);
 
                 //reposition any following minions nearby if possible
                 PenwickMinion.RepositionFollowers();
@@ -272,8 +282,8 @@ namespace ThePenwickPapers
 
             bool crimeWave = regionFlags[(int)PlayerEntity.RegionDataFlags.CrimeWave];
 
-            float crimeChance = (distance / 100) * (crimeWave ? 8 : 4);
-            crimeChance = Mathf.Clamp(crimeChance, 3, 30);
+            float crimeChance = (distance / 100) * (crimeWave ? 6 : 3);
+            crimeChance = Mathf.Clamp(crimeChance, 3, 15);
 
             if (Random.Range(0.0f, 100.0f) < crimeChance)
             {
@@ -355,8 +365,8 @@ namespace ThePenwickPapers
             bool hadIncident = false;
 
             bool crimeWave = regionFlags[(int)PlayerEntity.RegionDataFlags.CrimeWave];
-            float crimeChance = (distance / 100) * (crimeWave ? 12 : 6);
-            crimeChance = Mathf.Clamp(crimeChance, 3, 35);
+            float crimeChance = (distance / 100) * (crimeWave ? 7 : 3.5f);
+            crimeChance = Mathf.Clamp(crimeChance, 3, 20);
 
             if (Random.Range(0.0f, 100.0f) < crimeChance)
             {
@@ -396,6 +406,10 @@ namespace ThePenwickPapers
                 else if (HandleLostGold() > 0)
                 {
                     Utility.MessageBox(Text.CutpurseSucceeds.Get());
+                }
+                else
+                {
+                    Utility.MessageBox(Text.CutpurseFails.Get());
                 }
             }
 

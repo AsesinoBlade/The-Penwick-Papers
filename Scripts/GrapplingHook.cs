@@ -5,6 +5,7 @@
 using DaggerfallWorkshop;
 using DaggerfallWorkshop.Game;
 using DaggerfallWorkshop.Game.Items;
+using DaggerfallWorkshop.Game.Serialization;
 using DaggerfallWorkshop.Game.Utility;
 using DaggerfallWorkshop.Utility;
 using System.Collections;
@@ -20,7 +21,7 @@ namespace ThePenwickPapers
         public const string PenwickHookName = "Penwick Hook";
         public const string PenwickRopeName = "Penwick Rope";
         public const string PenwickFlyingHookName = "Penwick Flying Hook";
-        public const float MaxRopeLength = 12.0f;
+        public const float MaxRopeLength = 14.0f;
 
         static bool throwing;
         static GameObject hook;
@@ -49,9 +50,12 @@ namespace ThePenwickPapers
                 return false;  //already throwing, spellcasting or attacking, skip
 
             //check for equipped hook and rope item, from Skulduggery mod
-            DaggerfallUnityItem hookAndRopeItem = Utility.GetEquippedItem(HookAndRopeItemIndex);
-            if (hookAndRopeItem == null)
+            DaggerfallUnityItem hookAndRopeSkulduggeryItem = Utility.GetEquippedItem(HookAndRopeItemIndex);
+            DaggerfallUnityItem hookAndRopeItem = Utility.GetEquippedItem(GrapplingHookAndRope.HookAndRopeTemplateIndex);
+            if (hookAndRopeSkulduggeryItem == null && hookAndRopeItem == null)
                 return false;
+            else if (hookAndRopeItem == null)
+                hookAndRopeItem = hookAndRopeSkulduggeryItem;
 
             Vector3 anchorPoint;
 
@@ -441,7 +445,7 @@ namespace ThePenwickPapers
                 imageWidth,
                 imageHeight);
 
-            Color playerTint = Color.white;// ThePenwickPapersMod.Instance.GetPlayerTint();
+            Color playerTint = ThePenwickPapersMod.Instance.GetPlayerTint();
 
             DaggerfallUI.DrawTextureWithTexCoords(position, texture, animRect, true, playerTint);
 
@@ -512,6 +516,71 @@ namespace ThePenwickPapers
         }
 
     } //class RopeClimbing
+
+
+    public class GrapplingHookAndRope : DaggerfallUnityItem
+    {
+        public const int HookAndRopeTemplateIndex = 1771;
+
+        const int baseValue = 155;    // Base gold value
+
+
+        public GrapplingHookAndRope() : this(baseValue)
+        {
+        }
+
+
+        public GrapplingHookAndRope(int baseValue) : base(ItemGroups.UselessItems2, HookAndRopeTemplateIndex)
+        {
+            value = baseValue;
+        }
+
+
+        public override ItemData_v1 GetSaveData()
+        {
+            ItemData_v1 data = base.GetSaveData();
+            data.className = typeof(GrapplingHookAndRope).ToString();
+            return data;
+        }
+
+        public override string ItemName
+        {
+            get { return Text.HookAndRope.Get(); }
+        }
+
+
+        public override string LongName
+        {
+            get { return ItemName; }
+        }
+
+
+        public override bool UseItem(ItemCollection collection)
+        {
+            Utility.MessageBox(Text.HookAndRopeUsage.Get());
+
+            return true;
+        }
+
+
+        public override bool IsStackable()
+        {
+            return false;
+        }
+
+        public override EquipSlots GetEquipSlot()
+        {
+            return GameManager.Instance.PlayerEntity.ItemEquipTable.GetFirstSlot(EquipSlots.Bracer0, EquipSlots.Bracer1);
+        }
+
+        public override SoundClips GetEquipSound()
+        {
+            return SoundClips.EquipFlail;
+        }
+
+
+    } //class HookAndRope
+
 
 
 } //namespace

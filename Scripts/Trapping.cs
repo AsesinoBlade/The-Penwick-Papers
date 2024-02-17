@@ -344,7 +344,7 @@ namespace ThePenwickPapers
             {
                 float potency = GameManager.Instance.PlayerEntity.Skills.GetLiveSkillValue(DFCareer.Skills.Lockpicking);
                 potency /= 10;
-                ApplyEffectBundle(GameManager.Instance.PlayerEntityBehaviour, LunaStick.EffectKey, ElementTypes.None, potency);
+                ApplyEffectBundle(GameManager.Instance.PlayerEntityBehaviour, trap.Name, LunaStick.EffectKey, ElementTypes.None, potency);
             }
             else
             {
@@ -516,7 +516,7 @@ namespace ThePenwickPapers
                 case Text.Paralyzing:
                     archive = 378;
                     record = 1;
-                    clip = SoundClips.EnemyScorpionAttack;
+                    clip = SoundClips.SpellImpactPoison;
                     break;
                 case Text.FlamingBomb:
                     archive = 375;
@@ -572,14 +572,14 @@ namespace ThePenwickPapers
                     break;
                 case Text.Venomous:
                     if (!isUndead)
-                        ApplyEffectBundle(victim, ContinuousDamageHealth.EffectKey, ElementTypes.Poison, potency);
+                        ApplyEffectBundle(victim, trapType.Name, ContinuousDamageHealth.EffectKey, ElementTypes.Poison, potency);
                     break;
                 case Text.Paralyzing:
                     if (!isUndead)
-                        ApplyEffectBundle(victim, Paralyze.EffectKey, ElementTypes.Poison, potency / 3f);
+                        ApplyEffectBundle(victim, trapType.Name, Paralyze.EffectKey, ElementTypes.Poison, potency / 2.5f);
                     break;
                 case Text.FlamingBomb:
-                    ApplyEffectBundle(victim, ContinuousDamageHealth.EffectKey, ElementTypes.Fire, potency + 0.3f);
+                    ApplyEffectBundle(victim, trapType.Name, ContinuousDamageHealth.EffectKey, ElementTypes.Fire, potency + 0.2f);
                     break;
                 default:
                     return;
@@ -592,7 +592,7 @@ namespace ThePenwickPapers
         /// <summary>
         /// Initializes the EffectSettings and assigns the bundle.
         /// </summary>
-        static void ApplyEffectBundle(DaggerfallEntityBehaviour victim, string effectKey, ElementTypes element, float potency)
+        static void ApplyEffectBundle(DaggerfallEntityBehaviour victim, Text name, string effectKey, ElementTypes element, float potency)
         {
             EntityEffectManager manager = victim.GetComponent<EntityEffectManager>();
 
@@ -607,9 +607,13 @@ namespace ThePenwickPapers
             //trap damage is scaled by level
             float levelAdjustment = (5f + GameManager.Instance.PlayerEntity.Level) / 2f;
             settings.MagnitudeBaseMin = (int)(2f * potency * levelAdjustment);
-            settings.MagnitudeBaseMax = (int)(20f * potency * levelAdjustment);
+            settings.MagnitudeBaseMax = (int)(10f * potency * levelAdjustment);
             
-            EntityEffectBundle bundle = CreateBundle(effectKey, element, settings);
+            EntityEffectBundle bundle = CreateBundle(name, effectKey, element, settings);
+
+            //Set 'caster' as the victim so the trap won't draw aggro to the player.
+            bundle.CasterEntityBehaviour = victim;
+
             AssignBundleFlags flags = AssignBundleFlags.BypassChance;
             if (effectKey.Equals(LunaStick.EffectKey))
                 flags |= AssignBundleFlags.BypassSavingThrows;
@@ -621,7 +625,7 @@ namespace ThePenwickPapers
         /// <summary>
         /// Creates a non-spell bundle.
         /// </summary>
-        static EntityEffectBundle CreateBundle(string effectKey, ElementTypes element, EffectSettings? effectSettings = null)
+        static EntityEffectBundle CreateBundle(Text name, string effectKey, ElementTypes element, EffectSettings? effectSettings = null)
         {
             EffectBundleSettings settings = new EffectBundleSettings()
             {
@@ -629,12 +633,10 @@ namespace ThePenwickPapers
                 BundleType = element == ElementTypes.Poison ? BundleTypes.Poison : BundleTypes.None,
                 ElementType = element,
                 Effects = new EffectEntry[] { new EffectEntry(effectKey, effectSettings.Value) },
-                Name = effectKey,
+                Name = name.Get(),
             };
 
             EntityEffectBundle bundle = new EntityEffectBundle(settings, GameManager.Instance.PlayerEntityBehaviour);
-            if (!effectKey.Equals(LunaStick.EffectKey))
-                bundle.CasterEntityBehaviour = null; //...to prevent player aggro from trap
 
             return bundle;
         }

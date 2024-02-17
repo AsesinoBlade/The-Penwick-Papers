@@ -31,11 +31,14 @@ namespace ThePenwickPapers
             base.OnPush();
 
             //close window if player clicks outside of window
-            parentPanel.OnMouseClick += ParentPanel_OnMouseClick;
-            parentPanel.OnRightMouseClick += ParentPanel_OnMouseClick;
-            parentPanel.OnMiddleMouseClick += ParentPanel_OnMouseClick;
+            NativePanel.OnMouseClick += ParentPanel_OnMouseClick;
+            NativePanel.OnRightMouseClick += ParentPanel_OnMouseClick;
+            NativePanel.OnMiddleMouseClick += ParentPanel_OnMouseClick;
+            pickerPanel.OnMouseLeave += PickerPanel_OnMouseLeave;
 
             presentationTime = Time.realtimeSinceStartup;
+
+            ListBox.AlwaysAcceptKeyboardInput = true;
         }
 
         public override void OnPop()
@@ -53,20 +56,32 @@ namespace ThePenwickPapers
 
 
         /// <summary>
+        /// If mouse cursor leaves the picker window, close the window
+        /// </summary>
+        void PickerPanel_OnMouseLeave(BaseScreenComponent sender)
+        {
+            if (uiManager.TopWindow == this)
+            {
+                CancelWindow();
+            }
+        }
+
+
+        /// <summary>
         /// If player clicks outside picker window, then close the window
         /// </summary>
         void ParentPanel_OnMouseClick(BaseScreenComponent sender, Vector2 position)
         {
             //If clicking inside picker window, ignore
-            if (pickerPanel.Rectangle.Contains(position))
+            if (pickerPanel.MouseOverComponent)
                 return;
 
-            // Must be presented for minimum time before allowing to click through
-            // This prevents capturing parent-level click events and closing immediately
+            // Must be presented for minimum time before allowing to click through.
+            // This prevents capturing parent-level click events and closing immediately.
             if (Time.realtimeSinceStartup - presentationTime < minTimePresented)
                 return;
 
-            // Filter out (mouse) fighting activity
+            // Filter out (mouse) fighting activity.
             if (InputManager.Instance.GetKey(InputManager.Instance.GetBinding(InputManager.Actions.SwingWeapon)))
                 return;
 

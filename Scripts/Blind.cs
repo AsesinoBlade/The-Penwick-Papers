@@ -12,6 +12,7 @@ using DaggerfallWorkshop.Game.Entity;
 using DaggerfallWorkshop.Game.Items;
 using DaggerfallWorkshop.Game.MagicAndEffects;
 using DaggerfallWorkshop.Game.MagicAndEffects.MagicEffects;
+using DaggerfallWorkshop.Game.UserInterface;
 
 namespace ThePenwickPapers
 {
@@ -25,6 +26,8 @@ namespace ThePenwickPapers
             MobileTypes.Lich, MobileTypes.Mummy, MobileTypes.SkeletalWarrior,
             MobileTypes.Wraith
         };
+
+        public static Panel BlindPanel = new Panel();
 
         float originalSightRadius = -1f;
         float originalHearingRadius = -1f;
@@ -78,35 +81,42 @@ namespace ThePenwickPapers
             if (!entityBehaviour || entityBehaviour.EntityType == EntityTypes.Player)
                 return;
 
-            EnemySenses senses = entityBehaviour.GetComponent<EnemySenses>();
+            //Keep resetting hud to black to prevent flicker and other unwanted things.
+            if (entityBehaviour.EntityType == EntityTypes.Player)
+                DaggerfallUI.Instance.FadeBehaviour.SmashHUDToBlack();
 
-            //...if no target then skip
-            if (!senses || senses.Target == null)
-                return;
-
-            float movement = senses.Target.GetComponent<CharacterController>().velocity.magnitude;
-
-            float baseLoudness = GetBaseLoudness(senses.Target);
-
-            float noise = movement * baseLoudness / 4;
-
-            //always some effective noise equivalent, i.e. air currents, body heat, etc.
-            noise = Mathf.Clamp(noise, 1.3f, originalHearingRadius);
-
-            if (entityBehaviour.Entity.Career.AcuteHearing)
-                noise *= entityBehaviour.Entity.ImprovedAcuteHearing ? 1.5f : 1.3f;
-
-            //Set the entity's hearing radius based on target noise level
-            senses.HearingRadius = noise;
-
-            float distance = Vector3.Distance(entityBehaviour.transform.position, senses.Target.transform.position);
-
-            //chance (per frame) of being disoriented and losing target, must reacquire
-            if (distance > noise && Random.Range(0f, 2.5f) < Time.smoothDeltaTime)
+            if (!ThePenwickPapersMod.IsMonsterUniversityInstalled)
             {
-                senses.Target = null;
-                senses.DetectedTarget = false;
-                senses.HearingRadius = originalHearingRadius;
+                EnemySenses senses = entityBehaviour.GetComponent<EnemySenses>();
+
+                //...if no target then skip
+                if (!senses || senses.Target == null)
+                    return;
+
+                float movement = senses.Target.GetComponent<CharacterController>().velocity.magnitude;
+
+                float baseLoudness = GetBaseLoudness(senses.Target);
+
+                float noise = movement * baseLoudness / 4;
+
+                //always some effective noise equivalent, i.e. air currents, body heat, etc.
+                noise = Mathf.Clamp(noise, 1.3f, originalHearingRadius);
+
+                if (entityBehaviour.Entity.Career.AcuteHearing)
+                    noise *= entityBehaviour.Entity.ImprovedAcuteHearing ? 1.5f : 1.3f;
+
+                //Set the entity's hearing radius based on target noise level
+                senses.HearingRadius = noise;
+
+                float distance = Vector3.Distance(entityBehaviour.transform.position, senses.Target.transform.position);
+
+                //chance (per frame) of being disoriented and losing target, must reacquire
+                if (distance > noise && Random.Range(0f, 2.5f) < Time.smoothDeltaTime)
+                {
+                    senses.Target = null;
+                    senses.DetectedTarget = false;
+                    senses.HearingRadius = originalHearingRadius;
+                }
             }
 
         }
@@ -124,7 +134,8 @@ namespace ThePenwickPapers
 
             if (entityBehaviour.EntityType == EntityTypes.Player)
             {
-                DaggerfallUI.Instance.FadeBehaviour.FadeHUDFromBlack(1.0f);
+                DaggerfallUI.Instance.FadeBehaviour.SmashHUDToBlack();
+                DaggerfallUI.Instance.FadeBehaviour.FadeHUDFromBlack(3.0f);
             }
             else if (senses && originalSightRadius != -1f)
             {

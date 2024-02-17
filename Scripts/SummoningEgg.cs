@@ -7,6 +7,7 @@ using UnityEngine;
 using DaggerfallWorkshop;
 using DaggerfallWorkshop.Game;
 using DaggerfallWorkshop.Utility;
+using DaggerfallWorkshop.Game.Entity;
 
 namespace ThePenwickPapers
 {
@@ -101,6 +102,9 @@ namespace ThePenwickPapers
 
             creature.gameObject.SetActive(true);
             GameManager.Instance.RaiseOnEnemySpawnEvent(creature.gameObject);
+
+            //to allow interaction with the summoned creature
+            PenwickMinion.AddNewMinion(creature.gameObject.GetComponent<DaggerfallEntityBehaviour>());
 
         }
 

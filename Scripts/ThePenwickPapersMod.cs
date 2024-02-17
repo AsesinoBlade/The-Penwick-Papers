@@ -15,6 +15,7 @@ using DaggerfallWorkshop.Game.Entity;
 using DaggerfallConnect;
 using DaggerfallWorkshop.Game.Formulas;
 
+
 namespace ThePenwickPapers
 {
     public class ThePenwickPapersMod : MonoBehaviour
@@ -28,6 +29,9 @@ namespace ThePenwickPapers
         public static FPSWeapon TheBootAnimator;
         public static FPSGrapplingHook GrapplingHookAnimator;
         public static FPSHandWave HandWaveAnimator;
+        public static bool IsMonsterUniversityInstalled;
+
+        Mod firstPersonLightingMod;
 
         int potionOfSeekingRecipeKey;
         bool swallowActions = false;
@@ -90,6 +94,97 @@ namespace ThePenwickPapers
 
 
 
+        /// <summary>
+        /// Returns true if the First-Person-Lighting mod is installed and ready.
+        /// </summary>
+        public bool UsingFirstPersonLighting()
+        {
+            return firstPersonLightingMod != null && firstPersonLightingMod.IsReady;
+        }
+
+
+        /// <summary>
+        /// Gets the player tint of the player-character if the First-Person-Lighting mod is installed.
+        /// Otherwise returns White.
+        /// </summary>
+        public Color GetPlayerTint()
+        {
+            Color tint = Color.white;
+
+            if (firstPersonLightingMod == null || !firstPersonLightingMod.IsReady)
+                return tint;
+
+            firstPersonLightingMod.MessageReceiver("playerTint", null, (string message, object data) =>
+            {
+                tint = (Color)data;
+            });
+
+            return tint;
+        }
+
+
+        /// <summary>
+        /// Gets the lighting around the specified creature if the First-Person-Lighting mod is installed.
+        /// Otherwise returns White.
+        /// </summary>
+        public Color GetEntityLighting(DaggerfallEntityBehaviour creature)
+        {
+            Color tint = Color.white;
+
+            if (firstPersonLightingMod == null || !firstPersonLightingMod.IsReady)
+                return tint;
+
+            firstPersonLightingMod.MessageReceiver("entityLighting", creature, (string message, object data) =>
+            {
+                tint = (Color)data;
+            });
+
+            return tint;
+        }
+
+
+        /// <summary>
+        /// Gets the lighting at a specific location if the First-Person-Lighting mod is installed.
+        /// Otherwise returns White.
+        /// </summary>
+        public Color GetLocationLighting(Vector3 location)
+        {
+            Color tint = Color.white;
+
+            if (firstPersonLightingMod == null || !firstPersonLightingMod.IsReady)
+                return tint;
+
+            firstPersonLightingMod.MessageReceiver("locationLighting", location, (string message, object data) =>
+            {
+                tint = (Color)data;
+            });
+
+            return tint;
+        }
+
+
+        /// <summary>
+        /// Gets the max range of the player's grope light if the First-Person-Lighting mod is installed.
+        /// Otherwise returns 0.
+        /// </summary>
+        public float GetGropeLightRange()
+        {
+            float range = 0;
+
+            if (firstPersonLightingMod == null || !firstPersonLightingMod.IsReady)
+                return range;
+
+            firstPersonLightingMod.MessageReceiver("gropeLightRange", null, (string message, object data) =>
+            {
+                range = (float)data;
+            });
+
+            return range;
+        }
+
+
+
+
 
         void Start()
         {
@@ -101,6 +196,9 @@ namespace ThePenwickPapers
 
             Settings.Init(Mod);
 
+            firstPersonLightingMod = ModManager.Instance.GetMod("First-Person-Lighting");
+
+            IsMonsterUniversityInstalled = (ModManager.Instance.GetMod("Monster-University") != null);
 
             CreateSummoningEggTexture();
 
@@ -174,9 +272,6 @@ namespace ThePenwickPapers
             PenwickMinion.GuideMinions();
 
         }
-
-
-
 
 
         /// <summary>
@@ -417,11 +512,6 @@ namespace ThePenwickPapers
         {
             EntityEffectBroker effectBroker = GameManager.Instance.EntityEffectBroker;
 
-            DaggerfallUnity.Instance.ItemHelper.RegisterCustomItem(
-                LandmarkJournalItem.LandmarkJournalTemplateIndex,
-                ItemGroups.UselessItems2,
-                typeof(LandmarkJournalItem));
-
             if (Settings.EnableHerbalism)
             {
                 DaggerfallUnity.Instance.ItemHelper.RegisterCustomItem(
@@ -442,30 +532,55 @@ namespace ThePenwickPapers
                 effectBroker.RegisterEffectTemplate(lunaStickTemplateEffect);
             }
 
-            CreateAtronach createAtronachTemplateEffect = new CreateAtronach();
-            effectBroker.RegisterEffectTemplate(createAtronachTemplateEffect);
+            if (Settings.AddItems)
+            {
+                DaggerfallUnity.Instance.ItemHelper.RegisterCustomItem(
+                    LandmarkJournalItem.LandmarkJournalTemplateIndex,
+                    ItemGroups.UselessItems2,
+                    typeof(LandmarkJournalItem));
 
-            Reanimate reanimateTemplateEffect = new Reanimate();
-            effectBroker.RegisterEffectTemplate(reanimateTemplateEffect);
+                //Only add our HookAndRope item if Skulduggery isn't installed.
+                Mod skulduggery = ModManager.Instance.GetMod("Skulduggery - A Thief Overhaul");
+                if (skulduggery == null)
+                {
+                    DaggerfallUnity.Instance.ItemHelper.RegisterCustomItem(
+                        GrapplingHookAndRope.HookAndRopeTemplateIndex,
+                        ItemGroups.UselessItems2,
+                        typeof(GrapplingHookAndRope));
+                }
 
-            Scour scourTemplateEffect = new Scour();
-            effectBroker.RegisterEffectTemplate(scourTemplateEffect);
+                Seeking effect = new Seeking();
+                effect.SetCustomName(Text.SeekingPotionName.Get());
+                effectBroker.RegisterEffectTemplate(effect, true);
+                PotionRecipe recipe = effectBroker.GetEffectPotionRecipe(effect);
+                potionOfSeekingRecipeKey = recipe.GetHashCode();
+            }
 
-            IllusoryDecoy illusoryDecoyTemplateEffect = new IllusoryDecoy();
-            effectBroker.RegisterEffectTemplate(illusoryDecoyTemplateEffect);
+            if (Settings.AddSpells)
+            {
+                SummonImp summonImpTemplateEffect = new SummonImp();
+                effectBroker.RegisterEffectTemplate(summonImpTemplateEffect);
 
-            //The 'Blind' spell effect is needed for dirty tricks to work
-            Blind blindTemplateEffect = new Blind();
-            effectBroker.RegisterEffectTemplate(blindTemplateEffect);
+                CreateAtronach createAtronachTemplateEffect = new CreateAtronach();
+                effectBroker.RegisterEffectTemplate(createAtronachTemplateEffect);
 
-            WindWalk windWalkTemplateEffect = new WindWalk();
-            effectBroker.RegisterEffectTemplate(windWalkTemplateEffect);
+                Reanimate reanimateTemplateEffect = new Reanimate();
+                effectBroker.RegisterEffectTemplate(reanimateTemplateEffect);
 
-            Seeking effect = new Seeking();
-            effect.SetCustomName(Text.SeekingPotionName.Get());
-            effectBroker.RegisterEffectTemplate(effect, true);
-            PotionRecipe recipe = effectBroker.GetEffectPotionRecipe(effect);
-            potionOfSeekingRecipeKey = recipe.GetHashCode();
+                Scour scourTemplateEffect = new Scour();
+                effectBroker.RegisterEffectTemplate(scourTemplateEffect);
+
+                IllusoryDecoy illusoryDecoyTemplateEffect = new IllusoryDecoy();
+                effectBroker.RegisterEffectTemplate(illusoryDecoyTemplateEffect);
+
+                //The 'Blind' spell effect is needed for dirty tricks to work
+                Blind blindTemplateEffect = new Blind();
+                effectBroker.RegisterEffectTemplate(blindTemplateEffect);
+
+                WindWalk windWalkTemplateEffect = new WindWalk();
+                effectBroker.RegisterEffectTemplate(windWalkTemplateEffect);
+            }
+
         }
 
 
@@ -476,7 +591,7 @@ namespace ThePenwickPapers
         {
             PlayerEntity player = GameManager.Instance.PlayerEntity;
 
-            if (Settings.StartGameWithPotionOfSeeking)
+            if (Settings.StartGameWithPotionOfSeeking && Settings.AddItems)
             {
                 //when new character is created, add Potion Of Seeking recipe to their inventory
                 DaggerfallUnityItem potionRecipe = new DaggerfallUnityItem(ItemGroups.MiscItems, 4) { PotionRecipeKey = potionOfSeekingRecipeKey };
@@ -491,7 +606,7 @@ namespace ThePenwickPapers
             {
                 //give the player starting herbalism equipment if high enough medical skill
                 int medical = player.Skills.GetLiveSkillValue(DFCareer.Skills.Medical);
-                if (medical >= 23)
+                if (medical > 20)
                 {
                     DaggerfallUnityItem item = ItemBuilder.CreateItem(ItemGroups.MiscellaneousIngredients2, MortarAndPestle.MortarAndPestleTemplateIndex);
                     player.Items.AddItem(item);

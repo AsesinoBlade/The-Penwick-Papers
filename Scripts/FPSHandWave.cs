@@ -43,7 +43,15 @@ namespace ThePenwickPapers
         public bool DoHandWave()
         {
             WeaponManager weapons = GameManager.Instance.WeaponManager;
-            return DoHandWave(weapons.Sheathed || weapons.UsingRightHand == false);
+
+            bool rightToLeft = false;
+
+            if (weapons.Sheathed)
+                rightToLeft = true;
+            else if (weapons.ScreenWeapon.FlipHorizontal ^ weapons.ScreenWeapon.WeaponType == WeaponTypes.Bow)
+                rightToLeft = true;
+
+            return DoHandWave(rightToLeft);
         }
 
 
@@ -95,7 +103,7 @@ namespace ThePenwickPapers
                 imageWidth,
                 imageHeight);
 
-            Color playerTint = Color.white;// ThePenwickPapersMod.Instance.GetPlayerTint();
+            Color playerTint = ThePenwickPapersMod.Instance.GetPlayerTint();
 
             DaggerfallUI.DrawTextureWithTexCoords(position, texture, animRect, true, playerTint);
         }

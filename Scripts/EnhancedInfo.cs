@@ -199,6 +199,10 @@ namespace ThePenwickPapers
             {
                 info = Text.YouSeeAbnormalCreature.Get(status, Text.Frail.Get(), creatureName, disposition);
             }
+            else if (entity.IsInvisible)
+            {
+                return;
+            }
             else if (entity.IsMagicallyConcealed)
             {
                 info = Text.YouSeeVagueThing.Get();
@@ -209,13 +213,13 @@ namespace ThePenwickPapers
             }
 
 
-            float lighting = 1;// ThePenwickPapersMod.Instance.GetEntityLighting(creature).maxColorComponent;
+            float lighting = ThePenwickPapersMod.Instance.GetEntityLighting(creature).grayscale;
 
             if (lighting < 0.03f)
             {
                 Vector3 background = GetTargetBackground(creature);
-                float bgLighting = 0;// ThePenwickPapersMod.Instance.GetLocationLighting(background).maxColorComponent;
-                float gropeLightRange = 0;// ThePenwickPapersMod.Instance.GetGropeLightRange();
+                float bgLighting = ThePenwickPapersMod.Instance.GetLocationLighting(background).grayscale;
+                float gropeLightRange = ThePenwickPapersMod.Instance.GetGropeLightRange();
 
                 if (bgLighting > 0.03f)
                     info = Text.YouSeeSilhouette.Get(creatureName);

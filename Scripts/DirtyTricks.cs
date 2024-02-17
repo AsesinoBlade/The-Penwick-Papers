@@ -14,22 +14,24 @@ using DaggerfallConnect;
 using DaggerfallWorkshop.Game.UserInterfaceWindows;
 using DaggerfallWorkshop.Game.UserInterface;
 using DaggerfallWorkshop.Game.Items;
-
+using System.Reflection;
 
 namespace ThePenwickPapers
 {
 
     public static class DirtyTricks
     {
-        const float blindRange = 4.0f;
+        const float blindRange = 4.5f;
         const float bootRange = 6f; //max range at which player can *begin* a boot attempt
         const float peepRange = 0.6f;
+
         const int pebblesOfSkulduggeryItemIndex = 545; //value from thiefoverhaul/skulduggery mod
         const int pebblesConditionReduction = 9;
 
         static float lastPlayerBlindAttempt = -15f;
         static float lastEnemyBlindAttempt = -290f;
         static float lastRefillAttempt;
+        static float lastDiversionTime;
         static bool peeping;
 
         static readonly HashSet<MobileTypes> sneakyTypes = new HashSet<MobileTypes>() {
@@ -209,7 +211,7 @@ namespace ThePenwickPapers
             if (Settings.EnableDiversion == false)
                 return;
 
-            if (Time.time < lastRefillAttempt + 30f)
+            if (Time.time < lastRefillAttempt + 20f)
                 return;
             
             lastRefillAttempt = Time.time;
@@ -238,7 +240,7 @@ namespace ThePenwickPapers
 
             angle = 180 - Mathf.Abs(angle);
 
-            return angle < 25;
+            return angle < 45;
         }
 
 
@@ -307,12 +309,15 @@ namespace ThePenwickPapers
                 else if (resistant.Contains((MobileTypes)enemy.MobileEnemy.ID) && Dice100.SuccessRoll(50))
                     return false;
 
-                //adjusting enemy skills.  In the base game enemy skills go up 5pts per level by default
-                bool isSneaky = sneakyTypes.Contains((MobileTypes)enemy.MobileEnemy.ID);
-                streetwise -= enemy.Level * (isSneaky ? 2 : 4);
+                if (!ThePenwickPapersMod.IsMonsterUniversityInstalled || enemy.EntityType != EntityTypes.EnemyClass)
+                {
+                    //adjusting enemy skills.  In the base game enemy skills go up 5pts per level by default
+                    bool isSneaky = sneakyTypes.Contains((MobileTypes)enemy.MobileEnemy.ID);
+                    streetwise -= enemy.Level * (isSneaky ? 2 : 3);
+                }
             }
 
-            if (trickster != GameManager.Instance.PlayerEntityBehaviour)
+            if (trickster != GameManager.Instance.PlayerEntityBehaviour && !ThePenwickPapersMod.IsMonsterUniversityInstalled)
             {
                 //adjusting enemy skills.  In the base game enemy skills go up 5pts per level by default
                 pickpocket -= trickster.Entity.Level * 2;
@@ -473,8 +478,10 @@ namespace ThePenwickPapers
             if (GameManager.Instance.PlayerEnterExit.IsPlayerSubmerged)
                 return;
 
+            float diversionRecoveryTime = 20f - (GameManager.Instance.PlayerEntity.Stats.LiveLuck / 8);
+
             DaggerfallUnityItem pebbles = Utility.GetEquippedItem(pebblesOfSkulduggeryItemIndex);
-            if (pebbles == null)
+            if (pebbles == null && (lastDiversionTime > Time.time - diversionRecoveryTime))
                 return;
 
             //Try to prevent accidental diversion when really attempting blind
@@ -489,13 +496,20 @@ namespace ThePenwickPapers
                     return;
             }
 
-            if (pebbles.currentCondition - pebblesConditionReduction < 1)
+            if (pebbles != null)
             {
-                Utility.AddHUDText(Text.OutOfPebbles.Get());
-                return;
-            }
+                if (pebbles.currentCondition - pebblesConditionReduction < 1)
+                {
+                    Utility.AddHUDText(Text.OutOfPebbles.Get());
+                    return;
+                }
 
-            pebbles.LowerCondition(pebblesConditionReduction);
+                pebbles.LowerCondition(pebblesConditionReduction);
+            }
+            else
+            {
+                lastDiversionTime = Time.time;
+            }
 
             Vector3 location = hitInfo.point + (hitInfo.normal * 0.1f);
 
@@ -564,6 +578,9 @@ namespace ThePenwickPapers
         /// </summary>
         static void AttemptBoot(DaggerfallEntityBehaviour victim)
         {
+            if (ThePenwickPapersMod.TheBootAnimator.enabled)
+                return; //already booting
+
             DaggerfallUI.Instance.PlayOneShot(SoundClips.SwingMediumPitch);
 
             ThePenwickPapersMod.TheBootAnimator.enabled = true;
@@ -584,15 +601,36 @@ namespace ThePenwickPapers
             int hitFrame = TheBoot.GetHitFrame();
 
             while (TheBoot.IsAttacking() && TheBoot.GetCurrentFrame() < hitFrame)
+            {
+                SetBootTint(TheBoot);
                 yield return null;
+            }
 
             CheckKnockAttempt(victim);
 
             while (TheBoot.IsAttacking() && TheBoot.GetCurrentFrame() < 4)
+            {
+                SetBootTint(TheBoot);
                 yield return null;
+            }
 
             TheBoot.ChangeWeaponState(WeaponStates.Idle);
             TheBoot.enabled = false;
+        }
+
+
+        static void SetBootTint(FPSWeapon TheBoot)
+        {
+            if (!ThePenwickPapersMod.Instance.UsingFirstPersonLighting())
+                return;
+
+            //DFU 1.0.0 and prior doesn't have a Tint property on FPSWeapon, so skip.
+            PropertyInfo property = TheBoot.GetType().GetProperty("Tint");
+            if (property == null)
+                return;
+
+            Color tint = ThePenwickPapersMod.Instance.GetPlayerTint();
+            property.SetValue(TheBoot, tint);
         }
 
 
@@ -630,8 +668,11 @@ namespace ThePenwickPapers
 
             int defense = enemy.Skills.GetLiveSkillValue(DFCareer.Skills.Dodging);
 
-            //Enemies have skill of Base + level * 5 skills, which is a bit high.  Adjusting...
-            defense -= (int)((float)enemy.Level * 2f);
+            if (!ThePenwickPapersMod.IsMonsterUniversityInstalled || enemy.EntityType != EntityTypes.EnemyClass)
+            {
+                //Enemies have skill of Base + level * 5 skills, which is a bit high.  Adjusting...
+                defense -= (int)((float)enemy.Level * 2.5f);
+            }
 
             defense += enemy.Stats.GetLiveStatValue(DFCareer.Stats.Agility) / 2;
 
@@ -747,7 +788,7 @@ namespace ThePenwickPapers
             camera.depth = mainCamera.depth + 1;
             camera.allowHDR = mainCamera.allowHDR;
             camera.allowMSAA = mainCamera.allowMSAA;
-            camera.targetTexture = mainCamera.targetTexture; //hopefully fixes retro mode rendering
+            camera.targetTexture = mainCamera.targetTexture; //for retro mode rendering
 
             if (isCrouching)
                 camera.transform.Rotate(Vector3.forward, -90);

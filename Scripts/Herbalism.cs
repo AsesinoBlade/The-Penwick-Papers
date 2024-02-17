@@ -174,6 +174,11 @@ namespace ThePenwickPapers
 
         };
 
+        public const int PoisonsOffset = 128;
+        public static readonly HashSet<Poisons> Expungable = new HashSet<Poisons>() {
+            Poisons.Nux_Vomica, Poisons.Arsenic, Poisons.Moonseed, Poisons.Pyrrhic_Acid
+        };
+
         static DaggerfallEntityBehaviour patient;
         static ListPickerWindow remedyPicker;
         static bool creatingRemedy;
@@ -205,8 +210,10 @@ namespace ThePenwickPapers
                 EnemyMotor motor = creature.GetComponent<EnemyMotor>();
                 EnemyEntity entity = creature.Entity as EnemyEntity;
                 MobileEnemy mobileEnemy = entity.MobileEnemy;
-                if (creature.EntityType != EntityTypes.EnemyClass && mobileEnemy.Affinity != MobileAffinity.Animal)
-                    return false; //can only treat humans and animals
+                if (creature.EntityType != EntityTypes.EnemyClass &&
+                    mobileEnemy.Affinity != MobileAffinity.Animal &&
+                    mobileEnemy.Team != MobileTeams.Orcs)
+                    return false; //can only treat humans, orcs, and animals
 
                 hitFriendly = entity.MobileEnemy.Team == MobileTeams.PlayerAlly || !motor.IsHostile;
             }
@@ -420,7 +427,7 @@ namespace ThePenwickPapers
                 {
                     float distance = Vector3.Distance(camera.transform.position, originalPosition);
                     float angle = Quaternion.Angle(camera.transform.rotation, originalRotation);
-                    if (distance > 0.3f || angle > 20)
+                    if (distance > 0.4f || angle > 20)
                     {
                         Utility.AddHUDText(Text.HerbalismInterrupted.Get());
                         dfAudioSource.AudioSource.Stop();
@@ -448,18 +455,6 @@ namespace ThePenwickPapers
 
             switch (remedy.Name)
             {
-                case Text.ExpungePoison:
-                case Text.CleansePoison:
-                    int roundsRemaining = TreatPoison(remedy.Name.Equals(Text.CleansePoison));
-                    if (roundsRemaining < 1)
-                        Utility.AddDelayedHUDText(Text.PoisonCompletelyNeutralized.Get(), 3.0f);
-                    else if (roundsRemaining < 8)
-                        Utility.AddDelayedHUDText(Text.PoisonPartiallyNeutralized.Get(), 3.0f);
-                    else
-                        Utility.AddDelayedHUDText(Text.PoisonNeutralizeMuchRemains.Get(), 3.0f);
-
-                    ShowRemedyDescriptiveText(remedy);
-                    break;
                 case Text.Moonseed:
                 case Text.Magebane:
                 case Text.PyrrhicAcid:
@@ -477,7 +472,25 @@ namespace ThePenwickPapers
             RemoveIngredients(remedy);
 
             //medical skill has a large advancement multiplier (12)
-            GameManager.Instance.PlayerEntity.TallySkill(DFCareer.Skills.Medical, 28);
+            switch (remedy.TreatmentDescription)
+            {
+                //The second version of various remedies grant more experience
+                case Text.TreatLethargyViaErgogenicInfusion:
+                case Text.TreatSalubriousAccelerantViaRemedialPoultice:
+                case Text.TreatFluxePaucityViaDraconicIncense:
+                case Text.TreatAtrophiaViaAnapleroticUnction:
+                case Text.TreatCephalicPhlegmasiaViaAntiphlogisticInfusion:
+                case Text.TreatAmentiaViaBotanicalEnema:
+                case Text.TreatAtaxiaViaAntispasmodicSalve:
+                case Text.TreatHepaticPhlegmasiaViaFloralIncense:
+                case Text.TreatEffluviaViaRectifyingDecoction:
+                    GameManager.Instance.PlayerEntity.TallySkill(DFCareer.Skills.Medical, 60);
+                    break;
+                default:
+                    GameManager.Instance.PlayerEntity.TallySkill(DFCareer.Skills.Medical, 40);
+                    break;
+            }
+
         }
 
 
@@ -542,63 +555,6 @@ namespace ThePenwickPapers
             manager.AssignBundle(bundle, flags);
         }
 
-
-
-        const int poisonsOffset = 128;
-        static readonly HashSet<Poisons> expungable = new HashSet<Poisons>() {
-            Poisons.Nux_Vomica, Poisons.Arsenic, Poisons.Moonseed, Poisons.Pyrrhic_Acid
-        };
-
-        /// <summary>
-        /// Reduces poison time based on herbalist medical skill.
-        /// Returns the number of poison rounds remaining.
-        /// </summary>
-        static int TreatPoison(bool cleansing)
-        {
-            float medical = GameManager.Instance.PlayerEntity.Skills.GetLiveSkillValue(DFCareer.Skills.Medical);
-
-            float potency = 0.1f + medical / 100f;
-
-            EntityEffectManager manager = patient.GetComponent<EntityEffectManager>();
-
-            int totalRoundsRemaining = 0;
-
-            foreach (LiveEffectBundle bundle in manager.EffectBundles)
-            {
-                foreach (IEntityEffect effect in bundle.liveEffects)
-                {
-                    if (!(effect is PoisonEffect))
-                        continue;
-
-                    PoisonEffect poisonEffect = effect as PoisonEffect;
-
-                    Poisons variant = (Poisons)(poisonsOffset + poisonEffect.CurrentVariant);
-
-                    bool treatable = cleansing ^ expungable.Contains(variant);
-                    if (!treatable)
-                        continue;
-
-                    PoisonEffect.SaveData_v1 data = (PoisonEffect.SaveData_v1)poisonEffect.GetSaveData();
-
-                    float reduction = data.minutesRemaining * (potency / 100) + 1;
-                    reduction = Mathf.Clamp(reduction, 1f, 500f);
-                    if (reduction > data.minutesRemaining)
-                        reduction = data.minutesRemaining;
-
-                    data.minutesRemaining -= (int)reduction;
-                    if (data.minutesRemaining > 30)
-                        data.minutesRemaining = 30;
-
-                    totalRoundsRemaining += data.minutesRemaining;
-
-                    poisonEffect.RestoreSaveData(data);
-                }
-
-            }
-
-            return totalRoundsRemaining;
-
-        }
 
 
         /// <summary>
@@ -678,14 +634,14 @@ namespace ThePenwickPapers
 
                             PoisonEffect poisonEffect = effect as PoisonEffect;
 
-                            Poisons variant = (Poisons)(poisonsOffset + poisonEffect.CurrentVariant);
+                            Poisons variant = (Poisons)(PoisonsOffset + poisonEffect.CurrentVariant);
 
-                            bool treatable = cleansing ^ expungable.Contains(variant);
+                            //'Expunge' is for expungable poisons and 'Cleanse' is for the others.
+                            bool treatable = cleansing ^ Expungable.Contains(variant);
                             if (!treatable)
                                 continue;
 
-                            PoisonEffect.SaveData_v1 data = (PoisonEffect.SaveData_v1)poisonEffect.GetSaveData();
-                            if (data.currentState == PoisonEffect.PoisonStates.Active)
+                            if (poisonEffect.CurrentState == PoisonEffect.PoisonStates.Active)
                             {
                                 string poisonName = variant.ToString().Replace('_', ' ');
                                 string diagnosis = Text.PatientSuffersFromPoisoning.Get(poisonName);
@@ -784,7 +740,7 @@ namespace ThePenwickPapers
 
 
 
-    }
+    } //class Herbalism
 
 
 
@@ -869,8 +825,9 @@ namespace ThePenwickPapers
             properties.Key = HerbalEffectKey;
             properties.ShowSpellIcon = true;
             properties.AllowedTargets = EntityEffectBroker.TargetFlags_All;
-            properties.AllowedElements = ElementTypes.Poison;
+            properties.AllowedElements = ElementTypes.None;
             properties.AllowedCraftingStations = MagicCraftingStations.None;
+            properties.SupportDuration = true;
             properties.DisableReflectiveEnumeration = true;
         }
 
@@ -903,7 +860,7 @@ namespace ThePenwickPapers
 
             DaggerfallEntity entity = entityBehaviour.Entity;
 
-            float medical = Caster == null ? 20 : Caster.Entity.Skills.GetLiveSkillValue(DFCareer.Skills.Medical);
+            float medical = Caster == null ? 30 : Caster.Entity.Skills.GetLiveSkillValue(DFCareer.Skills.Medical);
 
             float potency = 0.1f + medical / 100.0f;
 
@@ -920,6 +877,12 @@ namespace ThePenwickPapers
                 case Text.TreatFluxePaucityViaMetallurgicCordial:
                 case Text.TreatFluxePaucityViaDraconicIncense:
                     entity.IncreaseMagicka((int)(potency * 18));
+                    break;
+                case Text.TreatToxaemiaViaDiaphoreticDepurative:
+                    TreatPoison(potency, true);
+                    break;
+                case Text.TreatToxaemiaViaRenalExpungement:
+                    TreatPoison(potency, false);
                     break;
                 default:
                     manager.HealAttribute(remedy.Stat, 1 + (int)(potency * 3));
@@ -949,9 +912,6 @@ namespace ThePenwickPapers
             DaggerfallEntityBehaviour entityBehaviour = GetPeeredEntityBehaviour(manager);
             if (!entityBehaviour)
                 return;
-
-            if (remedy.TreatmentDescription == Text.TreatCatylepsyViaAntiparalyticOintment)
-                entityBehaviour.Entity.IsImmuneToParalysis = false;
         }
 
 
@@ -986,6 +946,60 @@ namespace ThePenwickPapers
 
 
         /// <summary>
+        /// Reduces poison based on herbalist medical skill.
+        /// </summary>
+        void TreatPoison(float potency, bool cleansing)
+        {
+            foreach (LiveEffectBundle bundle in manager.EffectBundles)
+            {
+                foreach (IEntityEffect effect in bundle.liveEffects)
+                {
+                    if (!(effect is PoisonEffect))
+                        continue;
+
+                    PoisonEffect poisonEffect = effect as PoisonEffect;
+
+                    Poisons variant = (Poisons)(Herbalism.PoisonsOffset + poisonEffect.CurrentVariant);
+
+                    bool treatable = cleansing ^ Herbalism.Expungable.Contains(variant);
+                    if (!treatable)
+                        continue;
+
+                    //Using the SaveData mechanism because PoisonEffect doesn't expose the info by default.
+                    PoisonEffect.SaveData_v1 data = (PoisonEffect.SaveData_v1)poisonEffect.GetSaveData();
+
+                    if (data.minutesRemaining > 1)
+                    {
+                        //Reduce poison time.
+                        float reduction = 1 + (data.minutesRemaining * potency);
+                        if (reduction > data.minutesRemaining)
+                            reduction = data.minutesRemaining;
+
+                        data.minutesRemaining -= (int)reduction;
+                        if (data.minutesRemaining < 3)
+                            data.minutesRemaining = 1;
+
+                        poisonEffect.RestoreSaveData(data);
+                    }
+                    else
+                    {
+                        //Attempt to heal some of any stat damage that occurred.
+                        for (int i = 0; i < poisonEffect.StatMods.Length; ++i)
+                        {
+                            float reduction = (float)poisonEffect.StatMods[i] * potency / 1.5f;
+                            poisonEffect.StatMods[i] -= (int)reduction;
+                            if (poisonEffect.StatMods[i] > -2 && poisonEffect.StatMods[i] < 2)
+                                poisonEffect.StatMods[i] = 0;
+                        }
+                    }
+                }
+
+            }
+
+        }
+
+
+        /// <summary>
         /// Determines effect duration based on medical skill and remedy type
         /// </summary>
         int CalculateDuration()
@@ -1004,8 +1018,9 @@ namespace ThePenwickPapers
                 case Text.TreatAtaxiaViaAntispasmodicSalve:
                 case Text.TreatHepaticPhlegmasiaViaFloralIncense:
                 case Text.TreatEffluviaViaRectifyingDecoction:
-                case Text.TreatCatylepsyViaAntiparalyticOintment:
                     return medical / 2;
+                case Text.TreatCatylepsyViaAntiparalyticOintment:
+                    return medical * 2;
                 default:
                     return medical / 3;
             }
@@ -1042,7 +1057,7 @@ namespace ThePenwickPapers
 
             //Duration
             int medical = Caster == null ? 30 : Caster.Entity.Skills.GetLiveSkillValue(DFCareer.Skills.Medical);
-            RoundsRemaining = medical / 4;
+            RoundsRemaining = medical;
 
             EnvenomWeapons();
         }

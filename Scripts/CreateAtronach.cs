@@ -83,7 +83,6 @@ namespace ThePenwickPapers
         public override void SetProperties()
         {
             properties.Key = effectKey;
-            properties.ShowSpellIcon = false;
             properties.AllowedTargets = TargetTypes.CasterOnly;
             properties.AllowedElements = ElementTypes.Magic;
             properties.AllowedCraftingStations = MagicCraftingStations.SpellMaker;
@@ -91,9 +90,9 @@ namespace ThePenwickPapers
             properties.DisableReflectiveEnumeration = true;
             properties.SupportChance = true;
             properties.ChanceFunction = ChanceFunction.Custom;
-            properties.ChanceCosts = MakeEffectCosts(10, 50, 120);
+            properties.ChanceCosts = MakeEffectCosts(10, 40, 120);
             properties.SupportMagnitude = true;
-            properties.MagnitudeCosts = MakeEffectCosts(16, 80, 140);
+            properties.MagnitudeCosts = MakeEffectCosts(14, 50, 140);
 
             // Set variant count so framework knows how many to extract
             variantCount = variants.Length;
@@ -279,9 +278,6 @@ namespace ThePenwickPapers
             //Have atronach looking in same direction as caster
             creature.transform.rotation = Caster.transform.rotation;
 
-            //to allow interaction with the summoned creature
-            PenwickMinion.AddNewMinion(go.GetComponent<DaggerfallEntityBehaviour>());
-
             Texture2D eggTexture = ThePenwickPapersMod .Instance.SummoningEggTexture;
             AudioClip sound = Assets.WarpIn.Get<AudioClip>();
             SummoningEgg egg = new SummoningEgg(creature, eggTexture, variant.eggColor, sound);
@@ -312,16 +308,16 @@ namespace ThePenwickPapers
             mobileEnemy.MinHealth = 23 + magnitude;
             mobileEnemy.MaxHealth = mobileEnemy.MinHealth + luckBonus;
 
-            if (ChanceSuccess)
-            {
-                mobileEnemy.Team = Caster.EntityType == EntityTypes.Player ? MobileTeams.PlayerAlly : Caster.Entity.Team;
-            }
-
             //Record MobileEnemy changes to the MobileUnit
             mobileUnit.SetEnemy(DaggerfallUnity.Instance, mobileEnemy, MobileReactions.Hostile, 0);
 
             //Since we made changes to MobileEnemy, we have to reset the enemy career
             entity.SetEnemyCareer(mobileEnemy, behaviour.EntityType);
+
+            if (ChanceSuccess)
+            {
+                entity.Team = Caster.EntityType == EntityTypes.Player ? MobileTeams.PlayerAlly : Caster.Entity.Team;
+            }
         }
 
 

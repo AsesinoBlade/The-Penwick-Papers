@@ -24,11 +24,15 @@ namespace ThePenwickPapers
         public static bool EnablePeep;
         public static int  Mouse3Mode;
         public static int  Mouse4Mode;
+        public static bool AddItems;
+        public static bool AddSpells;
 
         public static bool AutoTeleportMinions;
+        public static bool MinionsRegenerate;
         public static int MinionVolume = 2;
         public static bool StartGameWithPotionOfSeeking;
         public static bool EnableLootAdjustment;
+        public static bool RelaxFreeHandRestriction;
 
         public static bool EnableGoverningAttributes;
         public static float SkillPerLevel = 15;
@@ -62,13 +66,17 @@ namespace ThePenwickPapers
             Mouse3Mode = modSettings.GetInt(featuresSection, "Mouse3");
             Mouse4Mode = modSettings.GetInt(featuresSection, "Mouse4");
 
+            AddItems = modSettings.GetBool(featuresSection, "AddItems");
+            AddSpells = modSettings.GetBool(featuresSection, "AddSpells");
 
             //Options
             string optionsSection = "Options";
             AutoTeleportMinions = modSettings.GetBool(optionsSection, "TeleportMinions");
+            MinionsRegenerate = modSettings.GetBool(optionsSection, "MinionsRegenerate");
             MinionVolume = modSettings.GetInt(optionsSection, "MinionSoundVolume");
             StartGameWithPotionOfSeeking = modSettings.GetBool(optionsSection, "StartGameWithPotionOfSeeking");
             EnableLootAdjustment = modSettings.GetBool(optionsSection, "LootAdjustment");
+            RelaxFreeHandRestriction = modSettings.GetBool(optionsSection, "RelaxFreeHandRestriction");
 
             //Advancement
             string advancementSection = "Advancement";

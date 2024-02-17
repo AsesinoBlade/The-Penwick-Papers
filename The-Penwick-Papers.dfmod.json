@@ -1,13 +1,12 @@
 {
     "ModTitle": "The-Penwick-Papers",
-    "ModVersion": "0.87",
+    "ModVersion": "1.0.0",
     "ModAuthor": "DunnyOfPenwick",
-    "ContactInfo": "http://dfworkshop.net",
-    "DFUnity_Version": "0.14.5",
+    "ContactInfo": "dfworkshop.net -or- @proton.me",
+    "DFUnity_Version": "1.0.0",
     "ModDescription": "A hodgepodge of useful features, spells, and items",
     "GUID": "c7a201b3-3b41-4c44-a5c6-f86c77cca630",
     "Files": [
-        "Assets/Game/Mods/The-Penwick-Papers/ReadMe.txt",
         "Assets/Game/Mods/The-Penwick-Papers/The-Penwick-Papers.dfmod.json",
         "Assets/Game/Mods/The-Penwick-Papers/ItemTemplates.json",
         "Assets/Game/Mods/The-Penwick-Papers/modpresets.json",
@@ -73,6 +72,9 @@
         "Assets/Game/Mods/The-Penwick-Papers/Sound/LockpickMetal4.ogg",
         "Assets/Game/Mods/The-Penwick-Papers/Sound/LockpickMetal3.ogg",
         "Assets/Game/Mods/The-Penwick-Papers/Scripts/Settings.cs",
-        "Assets/Game/Mods/The-Penwick-Papers/Scripts/Assets.cs"
+        "Assets/Game/Mods/The-Penwick-Papers/Scripts/Assets.cs",
+        "Assets/Game/Mods/The-Penwick-Papers/Textures/214_1771-0.png",
+        "Assets/Game/Mods/The-Penwick-Papers/README.md",
+        "Assets/Game/Mods/The-Penwick-Papers/Scripts/SummonImp.cs"
     ]
 }

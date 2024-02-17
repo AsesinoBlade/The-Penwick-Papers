@@ -1,5 +1,5 @@
 {
-    "Version": "0.80",
+    "Version": "1.0",
     "Sections": [
         {
             "Name": "Features",
@@ -96,6 +96,20 @@
                     "Description": "See textdatabase.txt",
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.MultipleChoiceKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "AddItems",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "AddSpells",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
                 }
             ],
             "$version": "v1"
@@ -122,20 +136,6 @@
             "$version": "v1"
         },
         {
-            "Name": "Space4",
-            "Description": null,
-            "IsAdvanced": false,
-            "Keys": [],
-            "$version": "v1"
-        },
-        {
-            "Name": "Space5",
-            "Description": null,
-            "IsAdvanced": false,
-            "Keys": [],
-            "$version": "v1"
-        },
-        {
             "Name": "Options",
             "Description": "",
             "IsAdvanced": false,
@@ -143,6 +143,13 @@
                 {
                     "Value": true,
                     "Name": "TeleportMinions",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "MinionsRegenerate",
                     "Description": "See textdatabase.txt",
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
@@ -170,6 +177,13 @@
                 {
                     "Value": true,
                     "Name": "LootAdjustment",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "RelaxFreeHandRestriction",
                     "Description": "See textdatabase.txt",
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"

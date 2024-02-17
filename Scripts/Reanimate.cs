@@ -49,7 +49,6 @@ namespace ThePenwickPapers
         public override void SetProperties()
         {
             properties.Key = effectKey;
-            properties.ShowSpellIcon = false;
             properties.AllowedTargets = TargetTypes.CasterOnly;
             properties.AllowedElements = ElementTypes.Magic;
             properties.AllowedCraftingStations = MagicCraftingStations.SpellMaker;
@@ -57,7 +56,7 @@ namespace ThePenwickPapers
             properties.DisableReflectiveEnumeration = true;
             properties.SupportChance = true;
             properties.ChanceFunction = ChanceFunction.Custom;
-            properties.ChanceCosts = MakeEffectCosts(12, 60, 300);
+            properties.ChanceCosts = MakeEffectCosts(10, 40, 300);
         }
 
 
@@ -456,9 +455,6 @@ namespace ThePenwickPapers
             creatureInventory.TransferAll(chosenVessel.Items);
             GameObject.Destroy(chosenVessel.gameObject);
 
-            //to allow interaction with the reanimated corpse, assuming it's an ally
-            PenwickMinion.AddNewMinion(go.GetComponent<DaggerfallEntityBehaviour>());
-
             Texture2D eggTexture = ThePenwickPapersMod.Instance.SummoningEggTexture;
             AudioClip sound = Assets.ReanimateWarp.Get<AudioClip>();
             SummoningEgg egg = new SummoningEgg(minion, eggTexture, new Color32(200, 0, 0, 255), sound);
@@ -525,16 +521,16 @@ namespace ThePenwickPapers
 
             soulChanceMod = GetSoulValue(soulType); //stronger souls are harder to control
 
-            if (RollChance()) //have to manually check chance because soulChanceMod was altered
-            {
-                mobileEnemy.Team = Caster.EntityType == EntityTypes.Player ? MobileTeams.PlayerAlly : Caster.Entity.Team;
-            }
-
             //Record MobileEnemy changes to the MobileUnit
             mobileUnit.SetEnemy(DaggerfallUnity.Instance, mobileEnemy, MobileReactions.Hostile, 0);
 
             //Since we made changes to MobileEnemy, we have to reset the enemy career
             entity.SetEnemyCareer(mobileEnemy, behaviour.EntityType);
+
+            if (RollChance()) //have to manually check chance because soulChanceMod was altered
+            {
+                entity.Team = Caster.EntityType == EntityTypes.Player ? MobileTeams.PlayerAlly : Caster.Entity.Team;
+            }
 
         }
 
