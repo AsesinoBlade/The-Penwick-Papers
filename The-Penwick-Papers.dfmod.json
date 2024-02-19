@@ -1,6 +1,6 @@
 {
     "ModTitle": "The-Penwick-Papers",
-    "ModVersion": "0.87",
+    "ModVersion": "1.0.0",
     "ModAuthor": "DunnyOfPenwick",
     "ContactInfo": "http://dfworkshop.net",
     "DFUnity_Version": "0.14.5",
@@ -73,7 +73,9 @@
         "Assets/Game/Mods/The-Penwick-Papers/Textures/PeepSlit.png",
         "Assets/Game/Mods/The-Penwick-Papers/Textures/209_1770-0.png",
         "Assets/Game/Mods/The-Penwick-Papers/Textures/RopeHi.png",
-        "Assets/Game/Mods/The-Penwick-Papers/Textures/LockPickPanel.png"
+        "Assets/Game/Mods/The-Penwick-Papers/Textures/LockPickPanel.png",
+        "Assets/Game/Mods/The-Penwick-Papers/Scripts/SummonImp.cs",
+        "Assets/Game/Mods/The-Penwick-Papers/Textures/214_1771-0.png"
     ],
     "ModPreCompile": true
 }
