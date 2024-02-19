@@ -749,7 +749,7 @@ namespace ThePenwickPapers
         {
             peeping = true;
 
-            ModManager.Instance.SendModMessage("ToolTips", "peeping", true);
+            ModManager.Instance.SendModMessage("ToolTips", "HideToolTip", true);
             DaggerfallUI.Instance.DaggerfallHUD.ShowCrosshair = false;
 
             Collider door = actionDoor.GetComponent<BoxCollider>();
@@ -834,7 +834,7 @@ namespace ThePenwickPapers
 
             hud.ParentPanel.BackgroundTexture = originalBackgroundTexture;
             hud.ParentPanel.BackgroundTextureLayout = originalBackgroundLayout;
-            ModManager.Instance.SendModMessage("ToolTips", "peeping", false);
+            ModManager.Instance.SendModMessage("ToolTips", "HideToolTip", false);
             DaggerfallUI.Instance.DaggerfallHUD.ShowCrosshair = DaggerfallUnity.Settings.Crosshair;
 
 
