@@ -212,6 +212,25 @@ namespace ThePenwickPapers
                 info = Text.YouSeeACreature.Get(status, creatureName, disposition);
             }
 
+            var str = string.Empty;
+            float percentDamage = entity.CurrentHealthPercent * 100;
+            if (percentDamage > 0)
+            {
+
+                if (percentDamage > 90)
+                    str = "Healthy";
+                else if (percentDamage > 80)
+                    str = "Lightly Wounded";
+                else if (percentDamage > 60)
+                    str = "Wounded";
+                else if (percentDamage > 40)
+                    str = "Severely Wounded";
+                else if (percentDamage > 20)
+                    str = "Critically Wounded";
+                else
+                    str = "Nearly Dead";
+                info += $"\r{creatureName} appears to be {str}.";
+            }
 
             float lighting = ThePenwickPapersMod.Instance.GetEntityLighting(creature).grayscale;
 
