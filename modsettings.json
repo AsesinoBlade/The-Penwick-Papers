@@ -31,6 +31,13 @@
                 },
                 {
                     "Value": true,
+                    "Name": "Trapping",
+                    "Description": "See textdatabase.txt",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
                     "Name": "LockpickMiniGame",
                     "Description": "See textdatabase.txt",
                     "$version": "v1",

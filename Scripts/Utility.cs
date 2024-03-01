@@ -305,13 +305,13 @@ namespace ThePenwickPapers
             if (GameManager.Instance.WeaponManager.ScreenWeapon.IsAttacking())
                 return true;
 
-            if (ThePenwickPapersMod.TheBootAnimator.enabled)
+            if (ThePenwickPapersMod.TheBootAnimator != null && ThePenwickPapersMod.TheBootAnimator.enabled)
                 return true;
 
-            if (ThePenwickPapersMod.GrapplingHookAnimator.enabled)
+            if (ThePenwickPapersMod.GrapplingHookAnimator != null && ThePenwickPapersMod.GrapplingHookAnimator.enabled)
                 return true;
 
-            if (ThePenwickPapersMod.HandWaveAnimator.enabled)
+            if (ThePenwickPapersMod.HandWaveAnimator != null && ThePenwickPapersMod.HandWaveAnimator.enabled)
                 return true;
 
             return false;
