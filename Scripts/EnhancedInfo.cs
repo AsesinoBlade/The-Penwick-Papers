@@ -478,6 +478,10 @@ namespace ThePenwickPapers
             }
 
             Utility.AddHUDText(info);
+            if (!Settings.GiveTalkToneTip)
+                return;
+
+            Utility.AddHUDText(GetTalkToneTipMessage(npc));
         }
 
 
@@ -599,11 +603,39 @@ namespace ThePenwickPapers
                 }
 
                 Utility.AddHUDText(Text.YouSeeDescribedNPC.Get(npc.Descriptor, npc.Name, npc.Disposition));
+
+                if (!Settings.GiveTalkToneTip)
+                    return;
+                
+                Utility.AddHUDText(GetTalkToneTipMessage(npc));
             }
 
         }
 
+        static string GetTalkToneTipMessage(NpcData npc)
+        {
+            var str = string.Empty;
+            switch (npc.Social)
+            {
+                case Commoners:
+                    str = "Looks like someone who prefers to speak plainly.";
+                    break;
+                case Underworld:
+                    str = "This one looks shady, best to keep my wits about me.";
+                    break;
+                case Scholars:
+                    str = "This one looks intelligent, I should watch how I speak.";
+                    break;
+                case Nobility:
+                    str = "I sense this one is a person of nobility, I should speak with respect.";
+                    break;
+                default:
+                    str = "I think I can be myself with this person.";
+                    break;
+            }
 
+            return str;
+        }
 
         static readonly string[] raceKeys = new string[]
         {

@@ -34,7 +34,7 @@ namespace ThePenwickPapers
         public static bool StartGameWithPotionOfSeeking;
         public static bool EnableLootAdjustment;
         public static bool RelaxFreeHandRestriction;
-
+        public static bool GiveTalkToneTip;
         public static bool EnableGoverningAttributes;
         public static float SkillPerLevel = 15;
 
@@ -79,6 +79,7 @@ namespace ThePenwickPapers
             StartGameWithPotionOfSeeking = modSettings.GetBool(optionsSection, "StartGameWithPotionOfSeeking");
             EnableLootAdjustment = modSettings.GetBool(optionsSection, "LootAdjustment");
             RelaxFreeHandRestriction = modSettings.GetBool(optionsSection, "RelaxFreeHandRestriction");
+            GiveTalkToneTip = modSettings.GetBool(optionsSection, "GiveTalkToneTip");
 
             //Advancement
             string advancementSection = "Advancement";

@@ -203,6 +203,13 @@
                     "Description": "See textdatabase.txt",
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "GiveTalkToneTip",
+                    "Description": "If enabled, an enhanced message for NPCs will inform you of the right talk tone",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
                 }
             ],
             "$version": "v1"
