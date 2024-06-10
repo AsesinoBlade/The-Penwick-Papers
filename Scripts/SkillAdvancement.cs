@@ -201,7 +201,7 @@ namespace ThePenwickPapers
         /// <summary>
         /// Activated when the Level button on Character sheet window is clicked
         /// </summary>
-        static void LevelButton_OnMouseClick(BaseScreenComponent sender, Vector2 position)
+        static void LevelButton_OnMouseClickOld(BaseScreenComponent sender, Vector2 position)
         {
             DaggerfallUI.Instance.PlayOneShot(SoundClips.ButtonClick);
 
@@ -212,6 +212,24 @@ namespace ThePenwickPapers
             int progress = (int)((currentLevel % 1) * 100);
 
             DaggerfallUI.MessageBox(string.Format(TextManager.Instance.GetLocalizedText("levelProgress"), progress));
+        }
+
+        static void LevelButton_OnMouseClick(BaseScreenComponent sender, Vector2 position)
+        {
+            PlayerEntity player = GameManager.Instance.PlayerEntity;
+
+            DaggerfallUI.Instance.PlayOneShot(SoundClips.ButtonClick);
+            float currentLevel = (player.CurrentLevelUpSkillSum - player.StartingLevelUpSkillSum + 28f) / Settings.SkillPerLevel;
+            int progress = (int)((currentLevel % 1) * 100);
+            float nextLevel =  ((int)currentLevel + 1) * Settings.SkillPerLevel -
+                            ((player.CurrentLevelUpSkillSum - player.StartingLevelUpSkillSum + 28));
+            var str = $"Progress made to the next level: {progress}%.  {nextLevel:F1} skill advancements needed for promotion.";
+            str +=
+                $"\r\rCurrentLevel = {currentLevel:F2}  CurrentLevelupSkill ={player.CurrentLevelUpSkillSum}, startingLevelUpSKill = {player.StartingLevelUpSkillSum}";
+            str += $"\r\rCurrentLevel=(CurrrentLevelupSkill - startingLevelupSkill + 28)/{Settings.SkillPerLevel}";
+            str += "\rcurrentSkill = all primary + all but lowest major + single highest minor";
+            DaggerfallUI.MessageBox(str);
+
         }
 
 
