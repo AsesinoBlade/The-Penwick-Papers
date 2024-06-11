@@ -85,7 +85,8 @@ namespace ThePenwickPapers
             string advancementSection = "Advancement";
             EnableGoverningAttributes = modSettings.GetBool(advancementSection, "GoverningAttributes");
             SkillPerLevel = modSettings.GetInt(advancementSection, "SkillPerLevel");
-
+            if (!EnableGoverningAttributes)
+                SkillPerLevel = 15;
 
             //Other settings derived from elsewhere
             UsingHiResSprites = ModManager.Instance.GetMod("DREAM - SPRITES") != null;
