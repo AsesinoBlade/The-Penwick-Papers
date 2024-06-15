@@ -37,7 +37,7 @@ namespace ThePenwickPapers
         public static bool GiveTalkToneTip;
         public static bool EnableGoverningAttributes;
         public static float SkillPerLevel = 15;
-
+        public static float BonusToGoverningAttributes;
 
         //derived settings
         public static bool UsingHiResSprites;
@@ -84,6 +84,7 @@ namespace ThePenwickPapers
             //Advancement
             string advancementSection = "Advancement";
             EnableGoverningAttributes = modSettings.GetBool(advancementSection, "GoverningAttributes");
+            BonusToGoverningAttributes = modSettings.GetValue<float>(advancementSection, "BonusToGoverningAttributes");
             SkillPerLevel = modSettings.GetInt(advancementSection, "SkillPerLevel");
             if (!EnableGoverningAttributes)
                 SkillPerLevel = 15;
@@ -93,8 +94,7 @@ namespace ThePenwickPapers
 
         }
 
-
-
+       
     } //class Settings
 
 

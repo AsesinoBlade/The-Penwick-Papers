@@ -234,6 +234,15 @@
                     "Description": "See textdatabase.txt",
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
+                },
+                {
+                    "Min": 0.1,
+                    "Max": 5.0,
+                    "Value": 1.0,
+                    "Name": "BonusToGoverningAttributes",
+                    "Description": null,
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderFloatKey"
                 }
             ],
             "$version": "v1"

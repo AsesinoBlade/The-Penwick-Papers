@@ -139,7 +139,7 @@ namespace ThePenwickPapers
             //starting with the same basic formula used in FormulaHelper
             double levelMod = Math.Pow(1.04, level);
             double basic = (skillValue * skillAdvancementMultiplier * careerAdvancementMultiplier * levelMod * 2 / 5) + 1;
-
+            basic /= Settings.BonusToGoverningAttributes;
             double modAdjustment = governingAttributeMultiplier * skillSmoothingMultiplier * exceedingGoverningAttributeMultiplier;
 
             double total = basic * modAdjustment;
