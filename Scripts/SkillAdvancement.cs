@@ -11,6 +11,7 @@ using DaggerfallWorkshop.Game.Entity;
 using DaggerfallWorkshop.Game.UserInterface;
 using DaggerfallWorkshop.Game.UserInterfaceWindows;
 using DaggerfallWorkshop;
+using DaggerfallWorkshop.Game.MagicAndEffects.MagicEffects;
 
 namespace ThePenwickPapers
 {
@@ -139,7 +140,15 @@ namespace ThePenwickPapers
             //starting with the same basic formula used in FormulaHelper
             double levelMod = Math.Pow(1.04, level);
             double basic = (skillValue * skillAdvancementMultiplier * careerAdvancementMultiplier * levelMod * 2 / 5) + 1;
-            basic /= Settings.BonusToGoverningAttributes;
+            
+            var bonusToGoverningAttributes = Settings.BonusToGoverningAttributes;
+            if (Settings.UseIntelligenceToProvideBonus)
+            {
+                var intelligence = player.Stats.GetPermanentStatValue(DFCareer.Stats.Intelligence);
+                bonusToGoverningAttributes = (float)intelligence / (skillValue == 0 ? 1 : skillValue);
+            }
+            
+            basic /= bonusToGoverningAttributes;
             double modAdjustment = governingAttributeMultiplier * skillSmoothingMultiplier * exceedingGoverningAttributeMultiplier;
 
             double total = basic * modAdjustment;

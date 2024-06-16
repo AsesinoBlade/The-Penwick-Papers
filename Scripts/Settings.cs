@@ -38,7 +38,7 @@ namespace ThePenwickPapers
         public static bool EnableGoverningAttributes;
         public static float SkillPerLevel = 15;
         public static float BonusToGoverningAttributes;
-
+        public static bool UseIntelligenceToProvideBonus;
         //derived settings
         public static bool UsingHiResSprites;
 
@@ -88,7 +88,8 @@ namespace ThePenwickPapers
             SkillPerLevel = modSettings.GetInt(advancementSection, "SkillPerLevel");
             if (!EnableGoverningAttributes)
                 SkillPerLevel = 15;
-
+            UseIntelligenceToProvideBonus =
+                modSettings.GetValue<bool>(advancementSection, "UseIntelligenceToProvideBonus");
             //Other settings derived from elsewhere
             UsingHiResSprites = ModManager.Instance.GetMod("DREAM - SPRITES") != null;
 
