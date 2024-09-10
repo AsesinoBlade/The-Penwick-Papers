@@ -797,7 +797,7 @@ namespace ThePenwickPapers
 
         public override EquipSlots GetEquipSlot()
         {
-            return GameManager.Instance.PlayerEntity.ItemEquipTable.GetFirstSlot(EquipSlots.Crystal0, EquipSlots.Crystal1);
+            return GameManager.Instance.PlayerEntity.ItemEquipTable.GetFirstSlot(EquipSlots.Mark0, EquipSlots.Mark1);
         }
 
         public override SoundClips GetEquipSound()
