@@ -11,8 +11,10 @@ using DaggerfallWorkshop;
 using DaggerfallWorkshop.Game;
 using DaggerfallWorkshop.Game.Questing;
 using DaggerfallWorkshop.Game.Entity;
+using DaggerfallWorkshop.Game.Items;
 using DaggerfallWorkshop.Game.MagicAndEffects;
 using DaggerfallWorkshop.Game.MagicAndEffects.MagicEffects;
+using DaggerfallWorkshop.Game.Questing.Actions;
 using DaggerfallWorkshop.Utility;
 
 using static DaggerfallConnect.Arena2.FactionFile.SocialGroups;
@@ -124,7 +126,8 @@ namespace ThePenwickPapers
         public static void ShowCreatureInfo(DaggerfallEntityBehaviour creature)
         {
             DaggerfallEntityBehaviour player = GameManager.Instance.PlayerEntityBehaviour;
-
+            bool hasBestiary = GameManager.Instance.PlayerEntity.Items.Contains(ItemGroups.UselessItems2, 900);
+            bool enhancedInfo = Input.GetKey(KeyCode.LeftShift);
             EnemyEntity entity = creature.Entity as EnemyEntity;
             MobileEnemy mobileEnemy = entity.MobileEnemy;
             EnemyMotor motor = creature.GetComponent<EnemyMotor>();
@@ -229,7 +232,7 @@ namespace ThePenwickPapers
                     str = "Critically Wounded";
                 else
                     str = "Nearly Dead";
-                info += $"\r{creatureName} appears to be {str}.";
+                info += $"{(hasBestiary ? "\n" : "\r")}{creatureName} appears to be {str}.";
             }
 
             float lighting = ThePenwickPapersMod.Instance.GetEntityLighting(creature).grayscale;
@@ -248,7 +251,59 @@ namespace ThePenwickPapers
                     return;
             }
 
-            Utility.AddHUDText(info);
+            if (hasBestiary && enhancedInfo)
+            {
+                info += GetAbilities(creature);
+                DaggerfallUI.Instance.BookReaderWindow.CreateBook(info);
+                DaggerfallUI.PostMessage(DaggerfallUIMessages.dfuiOpenBookReaderWindow);
+            }
+            else
+            {
+                Utility.AddHUDText(info);
+            }
+        }
+
+        private static string GetAbilities(DaggerfallEntityBehaviour creature)
+        {
+            DFCareer career;
+            var str = "";
+            var entity = creature.Entity as EnemyEntity;
+            if (entity == null)
+                return str;
+
+            var index = entity.CareerIndex;
+            career = null;
+            career = DaggerfallEntity.GetMonsterCareerTemplate((MonsterCareers)index);
+            if (career == null)
+                career = DaggerfallEntity.GetCustomCareerTemplate(entity.MobileEnemy.ID);
+            if (career == null)
+                return str;
+
+            str += "\n\n[/center][/scale=1.5][/color=ff0000]Vitals:\n";
+            str += $"[/left][/scale=1][/color=00ff00][/scale=1]Current Health:  {entity.CurrentHealth} out of {entity.MaxHealth}\n";
+            str += $"Current Magicka:  {entity.CurrentMagicka} out of {entity.MaxMagicka}\n";
+            str += $"Immune to Metals below: {entity.MinMetalToHit.ToString()}\n";
+
+            str += "\n\n[/center][/scale=1.5][/color=ff0000]Stats:\n";
+            str += $"[/left][/scale=1][/color=00ff00][/scale=1]Strength: {career.Strength}\n";
+            str += $"Intelligence: {career.Intelligence}\n";
+            str += $"Willpower: {career.Willpower}\n";
+            str += $"Agility: {career.Agility}\n";
+            str += $"Endurance: {career.Endurance}\n";
+            str += $"Personality: {career.Personality} \n";
+            str += $"Speed: {career.Speed}\n";
+            str += $"Luck: {career.Luck}\n";
+            str += "\n\n[/center][/scale=1.5][/color=ff0000]Tolerances:\n";
+            str += $"[/scale=1][/left][/color=00ff00]Paralysis: {career.Paralysis.ToString()}\n";
+            str += $"Poison: {career.Poison.ToString()}\n";
+            str += $"Shock: {career.Shock.ToString()}\n";
+            str += $"Disease: {career.Disease.ToString()}\n";
+            str += $"Magic: {career.Magic.ToString()}\n";
+            str += $"Fire: {career.Fire.ToString()}\n";
+            str += $"Frost: {career.Frost.ToString()}\n";
+            str += $"Disease: {career.Disease.ToString()}\n";
+            
+            return str;
         }
 
 
@@ -475,9 +530,16 @@ namespace ThePenwickPapers
             {
                 //A known or cowled individual (i.e. royalty et.)
                 info =Text.YouSeeFamiliarNPC.Get(staticNPC.DisplayName, npc.Disposition);
+
             }
 
             Utility.AddHUDText(info);
+            if (npc.IsQuestNPC || npc.IsQuestGiver)
+            {
+                info = npc.Gender == Genders.Male ? "Hmm, Something is on his mind..." : "Hmm, Something is on her mind...";
+                Utility.AddHUDText(info);
+            }
+
             if (!Settings.GiveTalkToneTip)
                 return;
 
