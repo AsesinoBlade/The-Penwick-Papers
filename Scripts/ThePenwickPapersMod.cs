@@ -15,6 +15,7 @@ using DaggerfallWorkshop.Game.Entity;
 using DaggerfallConnect;
 using DaggerfallWorkshop.Game.Formulas;
 using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
+using DaggerfallWorkshop.Game.UserInterface;
 
 
 namespace ThePenwickPapers
@@ -34,7 +35,7 @@ namespace ThePenwickPapers
 
         Mod firstPersonLightingMod;
 
-        int potionOfSeekingRecipeKey;
+        static int potionOfSeekingRecipeKey;
         bool swallowActions = false;
         PlayerActivateModes storedMode;
         int modeSwitchCountdown = 0;
@@ -51,6 +52,7 @@ namespace ThePenwickPapers
             modObject.AddComponent<ThePenwickPapersMod>();
 
             missingTextSubstring = UnityEngine.Localization.Settings.LocalizationSettings.StringDatabase.NoTranslationFoundMessage.Substring(0, 14);
+            Mod.MessageReceiver = MessageReceiver;
 
             Mod.IsReady = true;
         }
@@ -64,6 +66,22 @@ namespace ThePenwickPapers
             return Mod.Localize(key);
         }
 
+        static void MessageReceiver(string message, object data, DFModMessageCallback callBack)
+        {
+            bool val;
+            switch (message)
+            {
+                case "PotionOfSeekingRecipe":
+                    callBack?.Invoke("PotionOfSeekingRecipe", potionOfSeekingRecipeKey);
+                    break;
+
+
+                default:
+                    Debug.LogErrorFormat("{0}: unknown message received ({1}).", Mod, message);
+                    break;
+            }
+
+        }
 
         /// <summary>
         /// Checks if specified key actually exists in textdatabase.txt
