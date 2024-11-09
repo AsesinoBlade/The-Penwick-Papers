@@ -263,6 +263,15 @@ namespace ThePenwickPapers
             }
         }
 
+        public static bool CastsMagic(MobileEnemy eMobileEnemy)
+        {
+            if (eMobileEnemy.CastsMagic)
+                return true;
+            if (eMobileEnemy.HasSpellAnimation || (eMobileEnemy.SpellAnimFrames != null && eMobileEnemy.SpellAnimFrames.Length > 0))
+                return true;
+            return false;
+        }
+
         private static string GetAbilities(DaggerfallEntityBehaviour creature)
         {
             DFCareer career;
@@ -283,6 +292,7 @@ namespace ThePenwickPapers
             str += $"[/left][/scale=1][/color=00ff00][/scale=1]Current Health:  {entity.CurrentHealth} out of {entity.MaxHealth}\n";
             str += $"Current Magicka:  {entity.CurrentMagicka} out of {entity.MaxMagicka}\n";
             str += $"Immune to Metals below: {entity.MinMetalToHit.ToString()}\n";
+            str += $"Casts Magic: {CastsMagic(entity.MobileEnemy)}\n";
 
             str += "\n\n[/center][/scale=1.5][/color=ff0000]Stats:\n";
             str += $"[/left][/scale=1][/color=00ff00][/scale=1]Strength: {career.Strength}\n";
