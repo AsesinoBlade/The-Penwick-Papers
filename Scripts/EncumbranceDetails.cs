@@ -231,7 +231,7 @@ namespace ThePenwickPapers
         {
             Weight weight = default;
 
-            weight.gold = GameManager.Instance.PlayerEntity.GoldPieces * DaggerfallBankManager.goldUnitWeightInKg;
+            weight.gold = GameManager.Instance.PlayerEntity.GoldPieces * DaggerfallBankManager.goldPieceWeightInKg;
 
             ItemCollection items = GameManager.Instance.PlayerEntity.Items;
 
