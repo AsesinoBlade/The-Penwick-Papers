@@ -268,7 +268,7 @@ namespace ThePenwickPapers
 
 
             // Show success and play unlock sound
-            player.TallyCrimeGuildRequirements(true, 1);
+            player.TallyCrimeGuildRequirements(true, PlayerEntity.BuildingBreakIn);
             DaggerfallUI.Instance.PopupMessage(TextManager.Instance.GetLocalizedText("lockpickingSuccess"));
             DaggerfallAudioSource dfAudioSource = GameManager.Instance.PlayerObject.GetComponent<DaggerfallAudioSource>();
             if (dfAudioSource != null)
@@ -706,7 +706,7 @@ namespace ThePenwickPapers
             else
             {
                 //Door was an exterior building door.
-                GameManager.Instance.PlayerEntity.TallyCrimeGuildRequirements(true, 1);
+                GameManager.Instance.PlayerEntity.TallyCrimeGuildRequirements(true, PlayerEntity.BuildingBreakIn);
                 TransitionInterior(doorOwner, staticDoor, true);
             }
         }

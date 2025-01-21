@@ -161,6 +161,9 @@ namespace ThePenwickPapers
 
             foreach (DaggerfallEntityBehaviour behaviour in enemyBehaviours)
             {
+                if (Dice100.FailedRoll(5))
+                    continue;
+
                 EnemySenses senses = behaviour.GetComponent<EnemySenses>();
 
                 if (senses == null || senses.Target == null)
