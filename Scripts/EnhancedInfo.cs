@@ -69,6 +69,7 @@ namespace ThePenwickPapers
         public static bool ShowEnhancedEntityInfo(RaycastHit hitInfo)
         {
             EnemySenses senses = hitInfo.transform.GetComponent<EnemySenses>();
+            DaggerfallLoot loot = hitInfo.transform.GetComponent<DaggerfallLoot>();
             DaggerfallEntityBehaviour behaviour = hitInfo.transform.GetComponent<DaggerfallEntityBehaviour>();
             StaticNPC staticNPC = hitInfo.transform.GetComponent<StaticNPC>();
             MobilePersonNPC mobileNPC = hitInfo.transform.GetComponent<MobilePersonNPC>();
@@ -94,6 +95,30 @@ namespace ThePenwickPapers
                 {
                     ShowMobileNPCInfo(mobileNPC);
                     return true;
+                }
+                else if (loot && loot.ContainerType == LootContainerTypes.ShopShelves)
+                {
+                    // Extract year and day of year from now
+                    int nowYear = DaggerfallUnity.Instance.WorldTime.Now.Year;
+                    int nowDayOfYear = DaggerfallUnity.Instance.WorldTime.Now.DayOfYear;
+
+                    // Extract year and day of year from stockedDate
+                    int stockDateYear = loot.stockedDate / 1000;
+                    int stockDateDayOfYear = loot.stockedDate % 1000;
+
+                    // Convert both dates to total days since year 0
+                    int nowTotalDays = nowYear * DaggerfallDateTime.DaysPerYear + nowDayOfYear;
+                    int stockDateTotalDays = stockDateYear * DaggerfallDateTime.DaysPerYear + stockDateDayOfYear;
+
+                    // Calculate the difference in days
+                    int daysDifference = stockDateTotalDays - nowTotalDays;
+
+                    if (loot.stockedDate <= 0)
+                        DaggerfallUI.AddHUDText($"That is new inventory, have a look.");
+                    else if (daysDifference <= 0)
+                        DaggerfallUI.AddHUDText($"Buy up now if you want anything from this shelf; I'm replacing it tomorrow.");
+                    else
+                        DaggerfallUI.AddHUDText($"Bear in mind, new shipments for this shelf arrive in {daysDifference} days.");
                 }
             }
 
