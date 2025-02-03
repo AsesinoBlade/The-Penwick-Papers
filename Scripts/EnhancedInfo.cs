@@ -113,12 +113,25 @@ namespace ThePenwickPapers
                     // Calculate the difference in days
                     int daysDifference = stockDateTotalDays - nowTotalDays;
 
-                    if (loot.stockedDate <= 0)
+                    if (daysDifference < 0 || loot.stockedDate <= 0)
                         DaggerfallUI.AddHUDText($"That is new inventory, have a look.");
-                    else if (daysDifference <= 0)
-                        DaggerfallUI.AddHUDText($"Buy up now if you want anything from this shelf; I'm replacing it tomorrow.");
+                    else if (daysDifference == 0)
+                    {
+                        var salePercent = ThePenwickPapersMod.GetSalePrice(loot);
+                        if (salePercent > 0)
+                            DaggerfallUI.AddHUDText($"Everything is marked down {salePercent}%; I'm replacing it all tomorrow.", 2f);
+                        else
+                            DaggerfallUI.AddHUDText($"Buy up now if you want anything; I'm replacing it tomorrow.", 2f);
+                    }
                     else
-                        DaggerfallUI.AddHUDText($"Bear in mind, new shipments for this shelf arrive in {daysDifference} days.");
+                    {
+                        var salePercent = ThePenwickPapersMod.GetSalePrice(loot);
+                        if (salePercent > 0)
+                            DaggerfallUI.AddHUDText($"Everything is marked down {salePercent}%; I'm replacing it all in {daysDifference + 1} days.", 2f);
+                        else if (Settings.AlwaysDisplayNumberOfDaysToRestocking)
+                            DaggerfallUI.AddHUDText(
+                                $"Bear in mind, new shipments for this shelf arrive in {daysDifference + 1} days.", 2f);
+                    }
                 }
             }
 

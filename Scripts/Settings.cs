@@ -27,6 +27,7 @@ namespace ThePenwickPapers
         public static int  Mouse4Mode;
         public static bool AddItems;
         public static bool AddSpells;
+        public static bool AlwaysDisplayNumberOfDaysToRestocking;
         public static bool KickBackCausesDamage;
         public static bool AutoTeleportMinions;
         public static bool MinionsRegenerate;
@@ -70,7 +71,7 @@ namespace ThePenwickPapers
 
             AddItems = modSettings.GetBool(featuresSection, "AddItems");
             AddSpells = modSettings.GetBool(featuresSection, "AddSpells");
-
+            AlwaysDisplayNumberOfDaysToRestocking = modSettings.GetBool(featuresSection, "AlwaysDisplayNumberOfDaysToRestocking");
             //Options
             string optionsSection = "Options";
             AutoTeleportMinions = modSettings.GetBool(optionsSection, "TeleportMinions");
