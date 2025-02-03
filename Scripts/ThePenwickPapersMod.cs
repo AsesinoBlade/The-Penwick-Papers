@@ -83,6 +83,21 @@ namespace ThePenwickPapers
 
         }
 
+        public static int GetSalePrice(DaggerfallLoot loot)
+        {
+            var SalePrice = 0;
+            ModManager.Instance.SendModMessage("Change Formulas", "SalePrice", loot, (string message, object data) =>
+            {
+                if (data != null && data is int)
+                {
+                    SalePrice = (int)data;
+                }
+            });
+
+            return SalePrice;
+
+        }
+
         /// <summary>
         /// Checks if specified key actually exists in textdatabase.txt
         /// </summary>
