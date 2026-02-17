@@ -40,6 +40,8 @@ namespace ThePenwickPapers
         public static float SkillPerLevel = 15;
         public static float BonusToGoverningAttributes;
         public static bool UseIntelligenceToProvideBonus;
+        public static bool RequireBestiaryBook;
+        public static int ClimbingBonusTimeInSeconds = 30;
         //derived settings
         public static bool UsingHiResSprites;
 
@@ -81,6 +83,8 @@ namespace ThePenwickPapers
             EnableLootAdjustment = modSettings.GetBool(optionsSection, "LootAdjustment");
             RelaxFreeHandRestriction = modSettings.GetBool(optionsSection, "RelaxFreeHandRestriction");
             GiveTalkToneTip = modSettings.GetBool(optionsSection, "GiveTalkToneTip");
+            RequireBestiaryBook = modSettings.GetBool(optionsSection, "RequireBestiaryBook");
+            ClimbingBonusTimeInSeconds = modSettings.GetInt(optionsSection, "ClimbingBonusTimeInSeconds");
 
             //Advancement
             string advancementSection = "Advancement";

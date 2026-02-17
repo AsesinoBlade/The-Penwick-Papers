@@ -289,7 +289,7 @@ namespace ThePenwickPapers
                     return;
             }
 
-            if (hasBestiary && enhancedInfo)
+            if ((hasBestiary || !Settings.RequireBestiaryBook) && enhancedInfo)
             {
                 info += GetAbilities(creature);
                 DaggerfallUI.Instance.BookReaderWindow.CreateBook(info);

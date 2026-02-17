@@ -77,5 +77,6 @@
         "Assets/Game/Mods/The-Penwick-Papers/Scripts/SummonImp.cs",
         "Assets/Game/Mods/The-Penwick-Papers/Textures/214_1771-0.png"
     ],
-    "ModPreCompile": true
+    "ModPreCompile": true,
+    "ModPatch": false
 }

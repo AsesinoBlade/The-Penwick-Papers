@@ -22,7 +22,7 @@ namespace ThePenwickPapers
         public const string PenwickRopeName = "Penwick Rope";
         public const string PenwickFlyingHookName = "Penwick Flying Hook";
         public const float MaxRopeLength = 14.0f;
-
+        public static int ClimbingBonus = 0;
         static bool throwing;
         static GameObject hook;
         static GameObject rope;
@@ -158,8 +158,8 @@ namespace ThePenwickPapers
             //anchor the hook close enough to the wall to grab wall if needed
             anchorPoint = ledgeHit.point + lookDirection * 0.05f;
             anchorPoint.y = hitInfo.point.y;
-
             return anchorPoint;
+
         }
 
 
@@ -318,6 +318,7 @@ namespace ThePenwickPapers
 
             //handles creaking noises while climbing rope
             rope.AddComponent<RopeClimbing>();
+            ThePenwickPapersMod.Instance.InitiateClimbingBonus();
         }
 
 

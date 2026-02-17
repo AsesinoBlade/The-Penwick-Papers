@@ -152,13 +152,6 @@
             "$version": "v1"
         },
         {
-            "Name": "Space3",
-            "Description": null,
-            "IsAdvanced": false,
-            "Keys": [],
-            "$version": "v1"
-        },
-        {
             "Name": "Options",
             "Description": "",
             "IsAdvanced": false,
@@ -217,8 +210,31 @@
                     "Description": "If enabled, an enhanced message for NPCs will inform you of the right talk tone",
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": true,
+                    "Name": "RequireBestiaryBook",
+                    "Description": null,
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Min": 10,
+                    "Max": 120,
+                    "Value": 30,
+                    "Name": "ClimbingBonusTimeInSeconds",
+                    "Description": null,
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
                 }
             ],
+            "$version": "v1"
+        },
+        {
+            "Name": "Space3",
+            "Description": null,
+            "IsAdvanced": false,
+            "Keys": [],
             "$version": "v1"
         },
         {

@@ -3,6 +3,7 @@
 // Origin Date: Feb 2022
 
 using System;
+using System.Collections;
 using UnityEngine;
 using DaggerfallWorkshop.Game;
 using DaggerfallWorkshop.Game.Items;
@@ -66,6 +67,18 @@ namespace ThePenwickPapers
             return Mod.Localize(key);
         }
 
+        public void InitiateClimbingBonus()
+        {
+            GrapplingHook.ClimbingBonus = 100;
+            StartCoroutine(ResetClimbingBonus());
+        }
+        IEnumerator ResetClimbingBonus()
+        {
+            yield return new WaitForSecondsRealtime(Settings.ClimbingBonusTimeInSeconds);
+
+            GrapplingHook.ClimbingBonus = 0;
+        }
+
         static void MessageReceiver(string message, object data, DFModMessageCallback callBack)
         {
             bool val;
@@ -73,6 +86,10 @@ namespace ThePenwickPapers
             {
                 case "PotionOfSeekingRecipe":
                     callBack?.Invoke("PotionOfSeekingRecipe", potionOfSeekingRecipeKey);
+                    break;
+
+                case "ClimbingBonus":
+                    callBack?.Invoke("ClimbingBonus", GrapplingHook.ClimbingBonus);
                     break;
 
 
