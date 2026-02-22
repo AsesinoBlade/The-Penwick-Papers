@@ -300,7 +300,7 @@ namespace ThePenwickPapers
                             sbuff.Append(", ");
 
                         ItemTemplate template = DaggerfallUnity.Instance.ItemHelper.GetItemTemplate(remedy.Ingredients[i]);
-                        sbuff.Append(template.name);
+                        sbuff.Append($"{template.name} {(!HasItem(remedy.Ingredients[i]) ? "[X] " : " ")}" );
                     }
                     sbuff.Append(")");
                 }
@@ -356,6 +356,20 @@ namespace ThePenwickPapers
         /// </summary>
         static bool HasItem(int itemTemplateIndex)
         {
+            var playerEntity = GameManager.Instance.PlayerEntity;
+            var wagonAccess = playerEntity.Items.Contains(ItemGroups.Transportation, (int)Transportation.Small_cart);
+            var playerItems = playerEntity.Items;
+
+            if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon)
+            {
+                if (playerEntity.Items.Contains(ItemGroups.Transportation, (int)Transportation.Small_cart) &&
+                    ThePenwickPapersMod.Instance.DungeonWagonAccessProximityCheck())
+                    wagonAccess = true;
+                else
+                    wagonAccess = false;
+            }
+
+
             ItemCollection items = GameManager.Instance.PlayerEntity.Items;
 
             for (int i = 0; i < items.Count; i++)
@@ -365,9 +379,20 @@ namespace ThePenwickPapers
                     return true;
             }
 
-            return false;
-        }
+            if (wagonAccess)
+            {
+                for (int i = 0; i < playerEntity.WagonItems.Count; i++)
+                {
+                    DaggerfallUnityItem item = playerEntity.WagonItems.GetItem(i);
+                    if (item != null && !item.IsQuestItem && item.IsOfTemplate(itemTemplateIndex))
+                        return true;
+                }
 
+            }
+
+            return false;
+            
+        }
 
         /// <summary>
         /// Triggered when a remedy is selected from the list-picker window.

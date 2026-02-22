@@ -79,6 +79,38 @@ namespace ThePenwickPapers
             GrapplingHook.ClimbingBonus = 0;
         }
 
+        public bool DungeonWagonAccessProximityCheck()
+        {
+            const float proximityWagonAccessDistance = 5f;
+
+            // Get all static doors
+            DaggerfallStaticDoors[] allDoors = GameObject.FindObjectsOfType<DaggerfallStaticDoors>();
+            if (allDoors != null && allDoors.Length > 0)
+            {
+                Vector3 playerPos = GameManager.Instance.PlayerObject.transform.position;
+                // Find closest door to player
+                float closestDoorDistance = float.MaxValue;
+                foreach (DaggerfallStaticDoors doors in allDoors)
+                {
+                    int doorIndex;
+                    Vector3 doorPos;
+                    if (doors.FindClosestDoorToPlayer(playerPos, -1, out doorPos, out doorIndex, DoorTypes.DungeonExit))
+                    {
+                        float distance = Vector3.Distance(playerPos, doorPos);
+                        if (distance < closestDoorDistance)
+                            closestDoorDistance = distance;
+                    }
+                }
+
+                // Allow wagon access if close enough to any exit door
+                if (closestDoorDistance < proximityWagonAccessDistance)
+                    return true;
+            }
+            return false;
+        }
+
+
+
         static void MessageReceiver(string message, object data, DFModMessageCallback callBack)
         {
             bool val;
