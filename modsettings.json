@@ -235,6 +235,15 @@
                     "Description": null,
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderFloatKey"
+                },
+                {
+                    "Min": 2,
+                    "Max": 10,
+                    "Value": 2,
+                    "Name": "RopeColliderSize",
+                    "Description": "Multiplies Size of x for rope by this amount for collider (Default = 2 doubles size)",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
                 }
             ],
             "$version": "v1"

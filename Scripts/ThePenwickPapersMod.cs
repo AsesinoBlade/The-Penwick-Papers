@@ -407,7 +407,7 @@ namespace ThePenwickPapers
                 playerCollider.enabled = false;
 
                 Ray ray = new Ray(camera.transform.position, camera.transform.forward);
-                float maxDistance = 16;
+                float maxDistance = GrapplingHook.MaxRopeLength;
                 bool hitSomething = Physics.Raycast(ray, out RaycastHit hitInfo, maxDistance, ~0);
 
                 playerCollider.enabled = true;

@@ -15,13 +15,14 @@ using UnityEngine;
 namespace ThePenwickPapers
 {
 
-    public static class GrapplingHook
+    public static class GrapplingHook 
     {
         public const int HookAndRopeItemIndex = 544; //value from thiefoverhaul/skulduggery mod
         public const string PenwickHookName = "Penwick Hook";
         public const string PenwickRopeName = "Penwick Rope";
         public const string PenwickFlyingHookName = "Penwick Flying Hook";
         public static float MaxRopeLength = 14.0f;
+        public static int RopeColliderSize = 2;
         public static int ClimbingBonus = 0;
         static bool throwing;
         static GameObject hook;
@@ -32,7 +33,7 @@ namespace ThePenwickPapers
         /// <summary>
         /// Checks activated location to see if it conditions are appropriate to attach a grappling hook.
         /// If deemed appropriate, then a coroutine is called to create the hook and rope.
-        /// </summary>
+        /// </summary>          
         public static bool AttemptHook(RaycastHit hitInfo)
         {
             if (!hitInfo.collider)
@@ -313,7 +314,7 @@ namespace ThePenwickPapers
             //add the collider for climbing, kind of the point
             BoxCollider collider = rope.AddComponent<BoxCollider>();
             Vector3 size = collider.size;
-            size.x *= 2; //make the collider a bit wider so it is easier to climb onto
+            size.x *= RopeColliderSize; //make the collider a bit wider so it is easier to climb onto
             collider.size = size;
 
             //handles creaking noises while climbing rope
@@ -459,10 +460,25 @@ namespace ThePenwickPapers
 
     class RopeClimbing : MonoBehaviour
     {
+        // ClimbingMotor private fields needed to restore wall-contact state after a side-flip.
+        // myLedgeDirection tells ClimbMovement() which way to push the player into the wall.
+        // After a 180° flip it points away from the rope on the new side, so we must negate it.
+        // touchingSidesRestoreForce bridges the one frame where CollisionFlags.Sides is stale.
+        static readonly System.Reflection.FieldInfo myLedgeDirectionField =
+            typeof(ClimbingMotor).GetField(
+                "myLedgeDirection",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        static readonly System.Reflection.FieldInfo touchingSidesRestoreForceField =
+            typeof(ClimbingMotor).GetField(
+                "touchingSidesRestoreForce",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
         ClimbingMotor climbingMotor;
         CharacterController controller;
         DaggerfallAudioSource dfAudio;
         DaggerfallBillboard dfBillboard;
+        PlayerMouseLook mouseLook;
         float lastCreakTime;
 
 
@@ -472,6 +488,7 @@ namespace ThePenwickPapers
             controller = GameManager.Instance.PlayerController;
             dfAudio = transform.parent.GetComponent<DaggerfallAudioSource>();
             dfBillboard = GetComponent<DaggerfallBillboard>();
+            mouseLook = GameManager.Instance.PlayerMouseLook;
         }
 
 
@@ -486,7 +503,7 @@ namespace ThePenwickPapers
                 return;
             }
 
-            //Is the player climbing while close to the rope?            
+            //Is the player climbing while close to the rope?
             Vector3 ropeXZ = Vector3.ProjectOnPlane(transform.position, Vector3.up);
             Vector3 playerXZ = Vector3.ProjectOnPlane(climbingMotor.transform.position, Vector3.up);
 
@@ -498,9 +515,14 @@ namespace ThePenwickPapers
             //Is the player at same height as the rope?
             float length = dfBillboard.Summary.Size.y;
             float ropeY = transform.position.y;
+
             float playerY = climbingMotor.transform.position.y;
             if (Mathf.Abs(playerY - ropeY) > (length + 1f) / 2f)
                 return;
+
+            // Handle flip to the other side of the rope when F is pressed
+            if (Input.GetKeyDown(KeyCode.F))
+                TryFlipToOtherSide();
 
             //player appears to be climbing the rope, make occasional creaking sounds
             if (Time.time > lastCreakTime + 2.0f && Dice100.SuccessRoll(2))
@@ -513,7 +535,62 @@ namespace ThePenwickPapers
 
                 lastCreakTime = Time.time;
             }
+        }
 
+
+        /// <summary>
+        /// Attempts to move the player to the opposite side of the rope and flip their facing 180 degrees.
+        /// Blocked if there is geometry directly behind the rope.
+        /// </summary>
+        void TryFlipToOtherSide()
+        {
+            Vector3 playerPos = GameManager.Instance.PlayerObject.transform.position;
+
+            // Compute horizontal direction from player toward the rope
+            Vector3 ropePos = new Vector3(transform.position.x, playerPos.y, transform.position.z);
+            Vector3 toRope = ropePos - playerPos;
+            toRope.y = 0f;
+
+            if (toRope.sqrMagnitude < 0.0001f)
+                return; // Player is directly on the rope center, skip
+
+            Vector3 dirToRope = toRope.normalized;
+            float distFromRope = toRope.magnitude;
+
+            // Raycast from just past the rope to check for clearance on the other side.
+            // Start slightly beyond the rope collider to avoid hitting it.
+            Vector3 checkOrigin = ropePos + dirToRope * 0.15f;
+            float clearanceNeeded = distFromRope + controller.radius + 0.1f;
+
+            if (Physics.Raycast(checkOrigin, dirToRope, clearanceNeeded))
+                return; // Something is blocking on the other side, can't flip
+
+            // Place the player symmetrically on the opposite side of the rope
+            Vector3 newPos = ropePos + dirToRope * distFromRope;
+            GameManager.Instance.PlayerObject.transform.position = newPos;
+
+            // Rotate player to face back toward the rope
+            mouseLook.SetFacing(mouseLook.Yaw + 180f, mouseLook.Pitch);
+
+            // Negate myLedgeDirection so ClimbingMotor knows to push toward the rope from
+            // the new side.  Before the flip it pointed toward the rope from the old side;
+            // after the 180° rotation it points away, which causes ClimbMovement() to push
+            // the player away from the rope so CollisionFlags.Sides is never re-acquired and
+            // climbing state is dropped on the very next ClimbingCheck().
+            if (myLedgeDirectionField != null)
+            {
+                Vector3 ledgeDir = (Vector3)myLedgeDirectionField.GetValue(climbingMotor);
+                myLedgeDirectionField.SetValue(climbingMotor, -ledgeDir);
+            }
+
+            // Freeze the motor so FixedUpdate cannot apply gravity or run ClimbingCheck()
+            // while the CharacterController has not yet issued a Move() at the new position.
+            GameManager.Instance.PlayerMotor.FreezeMotor = 0.2f;
+
+            // Keep climbing state alive through the freeze and the single stale-CollisionFlags
+            // frame that follows, mirroring the save/load restoration pattern.
+            climbingMotor.IsClimbing = true;
+            touchingSidesRestoreForceField?.SetValue(climbingMotor, true);
         }
 
     } //class RopeClimbing

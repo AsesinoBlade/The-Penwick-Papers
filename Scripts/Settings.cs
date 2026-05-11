@@ -86,6 +86,7 @@ namespace ThePenwickPapers
             RequireBestiaryBook = modSettings.GetBool(optionsSection, "RequireBestiaryBook");
             ClimbingBonusTimeInSeconds = modSettings.GetInt(optionsSection, "ClimbingBonusTimeInSeconds");
             GrapplingHook.MaxRopeLength = modSettings.GetFloat(optionsSection, "MaxRopeLength");
+            GrapplingHook.RopeColliderSize = modSettings.GetInt(optionsSection, "RopeColliderSize");
 
             //Advancement
             string advancementSection = "Advancement";
