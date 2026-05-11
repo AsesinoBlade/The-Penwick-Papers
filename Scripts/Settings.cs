@@ -85,6 +85,7 @@ namespace ThePenwickPapers
             GiveTalkToneTip = modSettings.GetBool(optionsSection, "GiveTalkToneTip");
             RequireBestiaryBook = modSettings.GetBool(optionsSection, "RequireBestiaryBook");
             ClimbingBonusTimeInSeconds = modSettings.GetInt(optionsSection, "ClimbingBonusTimeInSeconds");
+            GrapplingHook.MaxRopeLength = modSettings.GetFloat(optionsSection, "MaxRopeLength");
 
             //Advancement
             string advancementSection = "Advancement";

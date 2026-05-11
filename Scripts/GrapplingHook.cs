@@ -21,7 +21,7 @@ namespace ThePenwickPapers
         public const string PenwickHookName = "Penwick Hook";
         public const string PenwickRopeName = "Penwick Rope";
         public const string PenwickFlyingHookName = "Penwick Flying Hook";
-        public const float MaxRopeLength = 14.0f;
+        public static float MaxRopeLength = 14.0f;
         public static int ClimbingBonus = 0;
         static bool throwing;
         static GameObject hook;
