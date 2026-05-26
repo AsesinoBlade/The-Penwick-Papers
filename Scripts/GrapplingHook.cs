@@ -66,7 +66,6 @@ namespace ThePenwickPapers
 
             if (anchorPoint == Vector3.zero)
             {
-                DaggerfallUI.AddHUDText("No suitable anchor point found.");
                 return false;
             }
 
