@@ -65,7 +65,10 @@ namespace ThePenwickPapers
                 anchorPoint = FindLowerLedgeAnchor(hitInfo);
 
             if (anchorPoint == Vector3.zero)
+            {
+                DaggerfallUI.AddHUDText("No suitable anchor point found.");
                 return false;
+            }
 
             float ropeLength;
             if (Physics.Raycast(anchorPoint, Vector3.down, out RaycastHit floorHit, MaxRopeLength))
@@ -503,6 +506,10 @@ namespace ThePenwickPapers
                 return;
             }
 
+            // Handle flip to the other side of the rope when F is pressed
+            if (Input.GetKeyDown(KeyCode.F))
+                TryFlipToOtherSide();
+
             //Is the player climbing while close to the rope?
             Vector3 ropeXZ = Vector3.ProjectOnPlane(transform.position, Vector3.up);
             Vector3 playerXZ = Vector3.ProjectOnPlane(climbingMotor.transform.position, Vector3.up);
@@ -519,10 +526,6 @@ namespace ThePenwickPapers
             float playerY = climbingMotor.transform.position.y;
             if (Mathf.Abs(playerY - ropeY) > (length + 1f) / 2f)
                 return;
-
-            // Handle flip to the other side of the rope when F is pressed
-            if (Input.GetKeyDown(KeyCode.F))
-                TryFlipToOtherSide();
 
             //player appears to be climbing the rope, make occasional creaking sounds
             if (Time.time > lastCreakTime + 2.0f && Dice100.SuccessRoll(2))
