@@ -87,6 +87,15 @@ namespace ThePenwickPapers
             ClimbingBonusTimeInSeconds = modSettings.GetInt(optionsSection, "ClimbingBonusTimeInSeconds");
             GrapplingHook.MaxRopeLength = modSettings.GetFloat(optionsSection, "MaxRopeLength");
             GrapplingHook.RopeColliderSize = modSettings.GetInt(optionsSection, "RopeColliderSize");
+            var key = modSettings.GetString(optionsSection, "RopeFlipKey");
+            if (!string.IsNullOrEmpty(key) && key.Length == 1)
+            {
+                char keyChar = key.ToUpper()[0];
+                if (keyChar >= 'A' && keyChar <= 'Z')
+                {
+                    GrapplingHook.RopeFlipKey = (KeyCode)System.Enum.Parse(typeof(KeyCode), keyChar.ToString());
+                }
+            }
 
             //Advancement
             string advancementSection = "Advancement";

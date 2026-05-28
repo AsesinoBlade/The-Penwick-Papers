@@ -27,7 +27,7 @@ namespace ThePenwickPapers
         static bool throwing;
         static GameObject hook;
         static GameObject rope;
-
+        public static KeyCode RopeFlipKey = KeyCode.F;
 
 
         /// <summary>
@@ -506,7 +506,7 @@ namespace ThePenwickPapers
             }
 
             // Handle flip to the other side of the rope when F is pressed
-            if (Input.GetKeyDown(KeyCode.F))
+            if (Input.GetKeyDown(GrapplingHook.RopeFlipKey))
                 TryFlipToOtherSide();
 
             //Is the player climbing while close to the rope?
@@ -559,16 +559,29 @@ namespace ThePenwickPapers
             Vector3 dirToRope = toRope.normalized;
             float distFromRope = toRope.magnitude;
 
-            // Raycast from just past the rope to check for clearance on the other side.
-            // Start slightly beyond the rope collider to avoid hitting it.
-            Vector3 checkOrigin = ropePos + dirToRope * 0.15f;
-            float clearanceNeeded = distFromRope + controller.radius + 0.1f;
+            // Raycast from player position through the rope to check for clearance on the other side.
+            // Start the ray just past the rope to avoid hitting the rope collider itself.
+            Vector3 rayStart = ropePos + dirToRope * 0.2f;
+            float checkDistance = distFromRope + controller.radius + 0.2f;
 
-            if (Physics.Raycast(checkOrigin, dirToRope, clearanceNeeded))
+            if (Physics.Raycast(rayStart, dirToRope, checkDistance))
+            {
+                DaggerfallUI.AddHUDText("Cannot flip, other side is blocked.");
                 return; // Something is blocking on the other side, can't flip
+            }
+
+            // Additional check: ensure the target position itself is clear
+            Vector3 newPos = ropePos + dirToRope * distFromRope;
+            if (Physics.CheckCapsule(
+                newPos + Vector3.up * controller.radius,
+                newPos + Vector3.up * (controller.height - controller.radius),
+                controller.radius * 0.9f))
+            {
+                DaggerfallUI.AddHUDText("Cannot flip, other side is blocked.");
+                return; // Target position has geometry, can't flip
+            }
 
             // Place the player symmetrically on the opposite side of the rope
-            Vector3 newPos = ropePos + dirToRope * distFromRope;
             GameManager.Instance.PlayerObject.transform.position = newPos;
 
             // Rotate player to face back toward the rope

@@ -244,6 +244,13 @@
                     "Description": "Multiplies Size of x for rope by this amount for collider (Default = 2 doubles size)",
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
+                },
+                {
+                    "Value": "",
+                    "Name": "RopeFlipKey",
+                    "Description": "Key to press in order to switch to the other size of the rope",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.TextKey"
                 }
             ],
             "$version": "v1"
