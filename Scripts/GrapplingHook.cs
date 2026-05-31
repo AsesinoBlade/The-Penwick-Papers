@@ -462,10 +462,6 @@ namespace ThePenwickPapers
 
     class RopeClimbing : MonoBehaviour
     {
-        // ClimbingMotor private fields needed to restore wall-contact state after a side-flip.
-        // myLedgeDirection tells ClimbMovement() which way to push the player into the wall.
-        // After a 180° flip it points away from the rope on the new side, so we must negate it.
-        // touchingSidesRestoreForce bridges the one frame where CollisionFlags.Sides is stale.
         static readonly System.Reflection.FieldInfo myLedgeDirectionField =
             typeof(ClimbingMotor).GetField(
                 "myLedgeDirection",
@@ -482,7 +478,7 @@ namespace ThePenwickPapers
         DaggerfallBillboard dfBillboard;
         PlayerMouseLook mouseLook;
         float lastCreakTime;
-
+        float lastAlignmentMessageTime;
 
         void Start()
         {
@@ -502,6 +498,8 @@ namespace ThePenwickPapers
             if (!climbingMotor.IsClimbing)
             {
                 dfAudio.AudioSource.Stop();
+                CheckRopeAlignment();
+                TryEngageRappel();
                 return;
             }
 
@@ -537,6 +535,106 @@ namespace ThePenwickPapers
 
                 lastCreakTime = Time.time;
             }
+        }
+
+
+        /// <summary>
+        /// Shows a HUD hint when the player is horizontally aligned with the rope
+        /// and facing away from it — ready to back onto it.  Throttled to avoid spam.
+        /// </summary>
+        void CheckRopeAlignment()
+        {
+            // Allow ledge-edge cases where isGrounded flickers
+            if (!controller.isGrounded && GameManager.Instance.PlayerMotor.IsJumping)
+                return;
+
+            // Horizontal proximity check
+            Vector3 ropeXZ = Vector3.ProjectOnPlane(transform.position, Vector3.up);
+            Vector3 playerXZ = Vector3.ProjectOnPlane(controller.transform.position, Vector3.up);
+            float horizontalDist = Vector3.Distance(playerXZ, ropeXZ);
+
+            if (horizontalDist >= controller.radius + 0.4f)
+                return;
+
+            // Vertical check: compare player FEET against the hook (top of rope).
+            // transform.parent is the hook GameObject placed at ledge height.
+            float hookY = transform.parent.position.y;
+            float playerFeetY = controller.transform.position.y - (controller.height / 2f);
+
+            // Player feet should be near hook height — within 1.5 units above or below.
+            if (playerFeetY < hookY - dfBillboard.Summary.Size.y || playerFeetY > hookY + 1.5f)
+                return;
+
+            // Player's back must point toward the rope
+            Vector3 dirToRope = new Vector3(
+                transform.position.x - controller.transform.position.x,
+                0f,
+                transform.position.z - controller.transform.position.z).normalized;
+
+            Vector3 playerBack = -GameManager.Instance.PlayerObject.transform.forward;
+            playerBack.y = 0f;
+            playerBack.Normalize();
+
+            if (Vector3.Dot(playerBack, dirToRope) < 0.4f)
+                return;
+
+            if (Time.time < lastAlignmentMessageTime + 3f)
+                return;
+
+            lastAlignmentMessageTime = Time.time;
+            DaggerfallUI.AddHUDText("Backing onto rope - press S to grab.");
+        }
+
+
+        /// <summary>
+        /// Attempts to engage climbing/rappel mode when the player is airborne, within reach of
+        /// the rope, and pressing backward into it.  Without this, ClimbingMotor never sees
+        /// CollisionFlags.Sides from the thin rope collider on a back-approach and the player falls.
+        /// </summary>
+        void TryEngageRappel()
+        {
+            if (controller.isGrounded)
+                return;
+
+            // Horizontal proximity check
+            Vector3 ropeXZ = Vector3.ProjectOnPlane(transform.position, Vector3.up);
+            Vector3 playerXZ = Vector3.ProjectOnPlane(controller.transform.position, Vector3.up);
+            float horizontalDist = Vector3.Distance(playerXZ, ropeXZ);
+
+            if (horizontalDist >= controller.radius + 0.15f)
+                return;
+
+            // Vertical check using player feet vs hook Y, same logic as CheckRopeAlignment
+            float hookY = transform.parent.position.y;
+            float playerFeetY = controller.transform.position.y - (controller.height / 2f);
+
+            if (playerFeetY < hookY - dfBillboard.Summary.Size.y || playerFeetY > hookY + 1.5f)
+                return;
+
+            // Player must be pressing backward
+            float vertical = InputManager.Instance.Vertical;
+            if (vertical >= 0f)
+                return;
+
+            // Backward direction must point toward the rope
+            Vector3 dirToRope = new Vector3(
+                transform.position.x - controller.transform.position.x,
+                0f,
+                transform.position.z - controller.transform.position.z).normalized;
+
+            Vector3 playerBack = -GameManager.Instance.PlayerObject.transform.forward;
+            playerBack.y = 0f;
+            playerBack.Normalize();
+
+            if (Vector3.Dot(playerBack, dirToRope) < 0.5f)
+                return;
+
+            myLedgeDirectionField?.SetValue(climbingMotor, dirToRope);
+
+            climbingMotor.IsClimbing = true;
+            touchingSidesRestoreForceField?.SetValue(climbingMotor, true);
+
+            GameManager.Instance.PlayerMotor.FreezeMotor = 0.15f;
         }
 
 
@@ -587,23 +685,14 @@ namespace ThePenwickPapers
             // Rotate player to face back toward the rope
             mouseLook.SetFacing(mouseLook.Yaw + 180f, mouseLook.Pitch);
 
-            // Negate myLedgeDirection so ClimbingMotor knows to push toward the rope from
-            // the new side.  Before the flip it pointed toward the rope from the old side;
-            // after the 180° rotation it points away, which causes ClimbMovement() to push
-            // the player away from the rope so CollisionFlags.Sides is never re-acquired and
-            // climbing state is dropped on the very next ClimbingCheck().
             if (myLedgeDirectionField != null)
             {
                 Vector3 ledgeDir = (Vector3)myLedgeDirectionField.GetValue(climbingMotor);
                 myLedgeDirectionField.SetValue(climbingMotor, -ledgeDir);
             }
 
-            // Freeze the motor so FixedUpdate cannot apply gravity or run ClimbingCheck()
-            // while the CharacterController has not yet issued a Move() at the new position.
             GameManager.Instance.PlayerMotor.FreezeMotor = 0.2f;
 
-            // Keep climbing state alive through the freeze and the single stale-CollisionFlags
-            // frame that follows, mirroring the save/load restoration pattern.
             climbingMotor.IsClimbing = true;
             touchingSidesRestoreForceField?.SetValue(climbingMotor, true);
         }
