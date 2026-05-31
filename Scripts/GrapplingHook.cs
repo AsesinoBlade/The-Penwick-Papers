@@ -167,7 +167,7 @@ namespace ThePenwickPapers
 
 
         /// <summary>
-        /// Animate throwing the hook and create the hook and rope GameObjects at the specified anchoring point.
+        /// Animate throwing the hook and create the hook and rope GameObject at the specified anchoring point.
         /// </summary>
         static IEnumerator ThrowHook(Vector3 location, float length)
         {
@@ -321,7 +321,6 @@ namespace ThePenwickPapers
 
             //handles creaking noises while climbing rope
             rope.AddComponent<RopeClimbing>();
-            ThePenwickPapersMod.Instance.InitiateClimbingBonus();
         }
 
 
@@ -472,6 +471,8 @@ namespace ThePenwickPapers
                 "touchingSidesRestoreForce",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
+        const short RopeClimbingBonus = 100;
+
         ClimbingMotor climbingMotor;
         CharacterController controller;
         DaggerfallAudioSource dfAudio;
@@ -479,6 +480,7 @@ namespace ThePenwickPapers
         PlayerMouseLook mouseLook;
         float lastCreakTime;
         float lastAlignmentMessageTime;
+        bool climbingBonusActive;
 
         void Start()
         {
@@ -490,6 +492,12 @@ namespace ThePenwickPapers
         }
 
 
+        void OnDestroy()
+        {
+            RemoveClimbingBonus();
+        }
+
+
         void Update()
         {
             if (GameManager.IsGamePaused)
@@ -497,6 +505,7 @@ namespace ThePenwickPapers
 
             if (!climbingMotor.IsClimbing)
             {
+                RemoveClimbingBonus();
                 dfAudio.AudioSource.Stop();
                 CheckRopeAlignment();
                 TryEngageRappel();
@@ -514,7 +523,10 @@ namespace ThePenwickPapers
             float distance = Vector3.Distance(playerXZ, ropeXZ);
 
             if (distance >= controller.radius + 0.06f)
+            {
+                RemoveClimbingBonus();
                 return; //player far from rope, no sounds
+            }
 
             //Is the player at same height as the rope?
             float length = dfBillboard.Summary.Size.y;
@@ -522,7 +534,13 @@ namespace ThePenwickPapers
 
             float playerY = climbingMotor.transform.position.y;
             if (Mathf.Abs(playerY - ropeY) > (length + 1f) / 2f)
+            {
+                RemoveClimbingBonus();
                 return;
+            }
+
+            // Player is on the rope — apply climbing bonus
+            ApplyClimbingBonus();
 
             //player appears to be climbing the rope, make occasional creaking sounds
             if (Time.time > lastCreakTime + 2.0f && Dice100.SuccessRoll(2))
@@ -535,6 +553,26 @@ namespace ThePenwickPapers
 
                 lastCreakTime = Time.time;
             }
+        }
+
+
+        void ApplyClimbingBonus()
+        {
+            if (climbingBonusActive)
+                return;
+
+            GrapplingHook.ClimbingBonus = 100;
+            climbingBonusActive = true;
+        }
+
+
+        void RemoveClimbingBonus()
+        {
+            if (!climbingBonusActive)
+                return;
+
+            GrapplingHook.ClimbingBonus = 0;
+            climbingBonusActive = false;
         }
 
 

@@ -67,18 +67,6 @@ namespace ThePenwickPapers
             return Mod.Localize(key);
         }
 
-        public void InitiateClimbingBonus()
-        {
-            GrapplingHook.ClimbingBonus = 100;
-            StartCoroutine(ResetClimbingBonus());
-        }
-        IEnumerator ResetClimbingBonus()
-        {
-            yield return new WaitForSecondsRealtime(Settings.ClimbingBonusTimeInSeconds);
-
-            GrapplingHook.ClimbingBonus = 0;
-        }
-
         public bool DungeonWagonAccessProximityCheck()
         {
             const float proximityWagonAccessDistance = 5f;
