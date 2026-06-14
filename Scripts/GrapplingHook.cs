@@ -560,7 +560,7 @@ namespace ThePenwickPapers
         {
             if (climbingBonusActive)
                 return;
-
+            GameManager.Instance.ClimbingMotor.perfectClimbing = true;
             GrapplingHook.ClimbingBonus = 100;
             climbingBonusActive = true;
         }
@@ -570,6 +570,7 @@ namespace ThePenwickPapers
         {
             if (!climbingBonusActive)
                 return;
+            GameManager.Instance.ClimbingMotor.perfectClimbing = false;
 
             GrapplingHook.ClimbingBonus = 0;
             climbingBonusActive = false;
