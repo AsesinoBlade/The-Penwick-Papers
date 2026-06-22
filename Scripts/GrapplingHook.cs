@@ -271,7 +271,8 @@ namespace ThePenwickPapers
 
             //create the basic hook
             hook = new GameObject(PenwickHookName);
-
+            BoxCollider hookCollider = hook.AddComponent<BoxCollider>();
+            hookCollider.isTrigger = true;
             Assets asset = Settings.UsingHiResSprites ? Assets.GrapplingHookHi : Assets.GrapplingHook;
             Texture2D hookTexture = asset.Get<Texture2D>();
 

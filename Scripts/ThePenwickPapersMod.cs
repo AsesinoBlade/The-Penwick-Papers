@@ -2,21 +2,19 @@
 // Author:      DunnyOfPenwick
 // Origin Date: Feb 2022
 
-using System;
-using System.Collections;
-using UnityEngine;
-using DaggerfallWorkshop.Game;
-using DaggerfallWorkshop.Game.Items;
-using DaggerfallWorkshop.Game.Utility.ModSupport;
-using DaggerfallWorkshop;
-using DaggerfallWorkshop.Game.MagicAndEffects;
-using DaggerfallWorkshop.Game.Utility;
-using DaggerfallWorkshop.Game.Serialization;
-using DaggerfallWorkshop.Game.Entity;
 using DaggerfallConnect;
+using DaggerfallWorkshop;
+using DaggerfallWorkshop.Game;
+using DaggerfallWorkshop.Game.Entity;
 using DaggerfallWorkshop.Game.Formulas;
+using DaggerfallWorkshop.Game.Items;
+using DaggerfallWorkshop.Game.MagicAndEffects;
+using DaggerfallWorkshop.Game.Serialization;
+using DaggerfallWorkshop.Game.Utility;
+using DaggerfallWorkshop.Game.Utility.ModSupport;
 using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
-using DaggerfallWorkshop.Game.UserInterface;
+using System;
+using UnityEngine;
 
 
 namespace ThePenwickPapers
@@ -33,6 +31,8 @@ namespace ThePenwickPapers
         public static FPSGrapplingHook GrapplingHookAnimator;
         public static FPSHandWave HandWaveAnimator;
         public static bool IsMonsterUniversityInstalled;
+        public const string PenwickHookName = "Penwick Hook";
+        public const string PenwickRopeName = "Penwick Rope";
 
         Mod firstPersonLightingMod;
 
@@ -257,16 +257,14 @@ namespace ThePenwickPapers
             return range;
         }
 
-
-
-
-
         void Start()
         {
             Debug.Log("Start(): The-Penwick-Papers");
+            PlayerActivate.RegisterCustomActivation(Mod, PenwickHookName, OnGrapplingRopeActivated);
+            PlayerActivate.RegisterCustomActivation(Mod, PenwickRopeName, OnGrapplingRopeActivated);
 
             Instance = this;
-
+            FormulaHelper.RegisterOverride(Mod, "WorldDataObjectIsClimbable", (Func<string, int, bool>)WorldDataObjectIsClimbable);
             Mod.SaveDataInterface = Persistent;
 
 
@@ -326,6 +324,114 @@ namespace ThePenwickPapers
             Debug.Log("Finished Start(): The-Penwick-Papers");
         }
 
+        static void OnGrapplingRopeActivated(RaycastHit hit)
+        {
+            GameObject clickedObject = hit.transform.gameObject;
+            GameObject ropeObject = ResolveRopeObject(clickedObject);
+
+            if (ropeObject == null)
+            {
+                Debug.LogWarning("[Penwick] OnGrapplingRopeActivated: could not resolve rope from clicked object: " + clickedObject.name);
+                return;
+            }
+
+            bool clickedHook = (ropeObject != clickedObject); // came via hook path
+            TeleportToRopeEnd(ropeObject, clickedHook);
+        }
+
+        /// <summary>
+        /// Given either the hook or the rope GameObject, always returns the rope.
+        /// Returns null if neither can be identified.
+        /// </summary>
+        static GameObject ResolveRopeObject(GameObject clicked)
+        {
+            // Clicked directly on the rope
+            if (clicked.name == PenwickRopeName)
+                return clicked;
+
+            // Clicked on the hook — rope is a child
+            if (clicked.name == PenwickHookName)
+            {
+                Transform ropeChild = clicked.transform.Find(PenwickRopeName);
+                return ropeChild != null ? ropeChild.gameObject : null;
+            }
+
+            // Clicked on something else entirely
+            return null;
+        }
+
+        /// <summary>
+        /// Teleports the player to the bottom of the rope when the hook was clicked,
+        /// or to the top when the rope itself was clicked.
+        /// </summary>
+        static void TeleportToRopeEnd(GameObject ropeObject, bool toBottom)
+        {
+            PlayerMotor playerMotor = GameManager.Instance.PlayerMotor;
+            Bounds bounds = GetWorldBounds(ropeObject.transform);
+
+            float destinationY = toBottom ? bounds.min.y : bounds.max.y + 3;
+
+            // Get the hook (parent of rope) center for the reflection pivot
+            Vector3 hookPos = ropeObject.transform.parent != null
+                ? ropeObject.transform.parent.position
+                : bounds.center;
+
+            Vector3 playerPos = playerMotor.transform.position;
+
+            // XZ offset from hook to player
+            float offsetX = playerPos.x - hookPos.x;
+            float offsetZ = playerPos.z - hookPos.z;
+
+            // Reflect through the hook: place player on the opposite side
+            float destinationX = (hookPos.x - offsetX);
+            float destinationZ = hookPos.z - offsetZ;
+
+            Vector3 destination = new Vector3(destinationX, destinationY, destinationZ);
+
+            playerMotor.transform.position = destination;
+            playerMotor.FixStanding();
+        }
+
+        /// <summary>
+        /// Returns a world-space Bounds that encapsulates the object and all its children,
+        /// preferring Collider bounds (physics shape) and falling back to Renderer bounds.
+        /// </summary>
+        static Bounds GetWorldBounds(Transform root)
+        {
+            // Try colliders first - more reliable for non-rendered physics objects
+            Collider[] colliders = root.GetComponentsInChildren<Collider>();
+            if (colliders.Length > 0)
+            {
+                Bounds b = colliders[0].bounds;
+                for (int i = 1; i < colliders.Length; i++)
+                    b.Encapsulate(colliders[i].bounds);
+                return b;
+            }
+
+            // Fall back to renderers
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>();
+            if (renderers.Length > 0)
+            {
+                Bounds b = renderers[0].bounds;
+                for (int i = 1; i < renderers.Length; i++)
+                    b.Encapsulate(renderers[i].bounds);
+                return b;
+            }
+
+            // Last resort: a small bounds at the object's own position
+            return new Bounds(root.position, Vector3.one);
+        }
+
+        private bool WorldDataObjectIsClimbable(string dataID, int ladder)
+        {
+            if (ladder == 41409)
+                return true;
+
+            if (dataID == "Penwick Rope")
+                return true;
+
+            return false;
+        }
 
 
         void Update()
