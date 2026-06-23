@@ -33,6 +33,23 @@ namespace ThePenwickPapers
         public static bool IsMonsterUniversityInstalled;
         public const string PenwickHookName = "Penwick Hook";
         public const string PenwickRopeName = "Penwick Rope";
+        static GameObject gameObjectPlayerAdvanced;
+
+        static GameObject GameObjectPayerAdvanced
+        {
+            get
+            {
+                if (gameObjectPlayerAdvanced == null)
+                    gameObjectPlayerAdvanced = GameObject.Find("PlayerAdvanced");
+                return gameObjectPlayerAdvanced;
+            }
+            set
+            {
+                gameObjectPlayerAdvanced = value;
+            }
+        }
+
+            
 
         Mod firstPersonLightingMod;
 
@@ -166,6 +183,12 @@ namespace ThePenwickPapers
         private void LoadSettings(ModSettings settings, ModSettingsChange change)
         {
             Settings.Init(Mod);
+            PlayerActivate.RegisterCustomActivation(Mod, PenwickHookName, OnGrapplingRopeActivated);
+            if (Settings.AllowInstantClimbUpRope)
+                PlayerActivate.RegisterCustomActivation(Mod, PenwickRopeName, OnGrapplingRopeActivated);
+            else
+                PlayerActivate.UnregisterCustomActivation(Mod, PenwickRopeName);
+
         }
 
 
@@ -260,8 +283,6 @@ namespace ThePenwickPapers
         void Start()
         {
             Debug.Log("Start(): The-Penwick-Papers");
-            PlayerActivate.RegisterCustomActivation(Mod, PenwickHookName, OnGrapplingRopeActivated);
-            PlayerActivate.RegisterCustomActivation(Mod, PenwickRopeName, OnGrapplingRopeActivated);
 
             Instance = this;
             FormulaHelper.RegisterOverride(Mod, "WorldDataObjectIsClimbable", (Func<string, int, bool>)WorldDataObjectIsClimbable);
@@ -390,6 +411,13 @@ namespace ThePenwickPapers
 
             playerMotor.transform.position = destination;
             playerMotor.FixStanding();
+            if (toBottom)
+            {
+                var mouseLook = GameManager.Instance.PlayerMouseLook;
+                // Rotate player to face back toward the rope
+                mouseLook.SetFacing(mouseLook.Yaw + 180f, mouseLook.Pitch);
+            }
+
         }
 
         /// <summary>
@@ -405,6 +433,9 @@ namespace ThePenwickPapers
                 Bounds b = colliders[0].bounds;
                 for (int i = 1; i < colliders.Length; i++)
                     b.Encapsulate(colliders[i].bounds);
+                var height = b.max.y - b.min.y;
+                var skillGain = (short)(Mathf.FloorToInt(height / 14f) + 1);
+                GameManager.Instance.PlayerEntity.TallySkill(DFCareer.Skills.Climbing, skillGain);
                 return b;
             }
 
@@ -415,10 +446,14 @@ namespace ThePenwickPapers
                 Bounds b = renderers[0].bounds;
                 for (int i = 1; i < renderers.Length; i++)
                     b.Encapsulate(renderers[i].bounds);
+                var height = b.max.y - b.min.y;
+                var skillGain = (short)(Mathf.FloorToInt(height / 14f) + 1);
+                GameManager.Instance.PlayerEntity.TallySkill(DFCareer.Skills.Climbing, skillGain);
                 return b;
             }
 
             // Last resort: a small bounds at the object's own position
+
             return new Bounds(root.position, Vector3.one);
         }
 

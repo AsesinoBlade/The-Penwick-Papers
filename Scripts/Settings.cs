@@ -2,6 +2,7 @@
 // Author:       DunnyOfPenwick
 // Origin Date:  July 2023
 
+using DaggerfallWorkshop.Game;
 using UnityEngine;
 using DaggerfallWorkshop.Game.Utility.ModSupport;
 using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
@@ -41,6 +42,7 @@ namespace ThePenwickPapers
         public static float BonusToGoverningAttributes;
         public static bool UseIntelligenceToProvideBonus;
         public static bool RequireBestiaryBook;
+        public static bool AllowInstantClimbUpRope;
         public static int ClimbingBonusTimeInSeconds = 30;
         //derived settings
         public static bool UsingHiResSprites;
@@ -96,6 +98,7 @@ namespace ThePenwickPapers
                     GrapplingHook.RopeFlipKey = (KeyCode)System.Enum.Parse(typeof(KeyCode), keyChar.ToString());
                 }
             }
+            AllowInstantClimbUpRope = modSettings.GetBool(optionsSection, "AllowInstantClimbUpRope");
 
             //Advancement
             string advancementSection = "Advancement";
@@ -108,10 +111,9 @@ namespace ThePenwickPapers
                 modSettings.GetValue<bool>(advancementSection, "UseIntelligenceToProvideBonus");
             //Other settings derived from elsewhere
             UsingHiResSprites = ModManager.Instance.GetMod("DREAM - SPRITES") != null;
-
         }
 
-       
+
     } //class Settings
 
 
