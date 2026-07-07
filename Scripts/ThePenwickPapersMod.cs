@@ -578,8 +578,12 @@ namespace ThePenwickPapers
 
                     if (!actionHandled && creature)
                     {
+
                         PenwickMinion minion = creature.GetComponent<PenwickMinion>();
                         actionHandled = minion && minion.Activate(hitInfo.distance);
+                        var pacifyChance = ChanceToPacify(creature);
+                        if (!actionHandled && minion == null && pacifyChance > 0)
+                            actionHandled = PacifyAnimal(creature, hitInfo, pacifyChance);
                     }
 
                     if (!actionHandled && Settings.EnableLockpickGame && mode == PlayerActivateModes.Steal)
@@ -594,6 +598,83 @@ namespace ThePenwickPapers
                     }
                 }
             }
+        }
+
+        public DaggerfallUnityItem GetItemInInventory(ItemGroups itemGroup, int templateIndex)
+        {
+            var playerEntity = GameManager.Instance.PlayerEntity;
+            var wagonAccess = playerEntity.Items.Contains(ItemGroups.Transportation, (int)Transportation.Small_cart);
+            var playerItems = playerEntity.Items;
+
+            if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon)
+            {
+                if (playerEntity.Items.Contains(ItemGroups.Transportation, (int)Transportation.Small_cart) &&
+                    DungeonWagonAccessProximityCheck())
+                    wagonAccess = true;
+                else
+                    wagonAccess = false;
+            }
+
+            if (playerEntity.Items.Contains(itemGroup, templateIndex))
+                return playerEntity.Items.GetItem(itemGroup, templateIndex);
+            if (wagonAccess && playerEntity.WagonItems.Contains(itemGroup, templateIndex))
+                return playerEntity.WagonItems.GetItem(itemGroup, templateIndex);
+            return null;
+        }
+
+        private int ChanceToPacify(DaggerfallEntityBehaviour creature)
+        {
+            switch (creature.Entity.Career.Name)
+            {
+                case "Dog":
+                    return 100;
+                case "Wolf":
+                    return 80;
+                case "Boar":
+                    return 100;
+                case "MountainLion":
+                    return 50;
+                case "SnowWolf":
+                    return 40;
+                default:
+                    return 0;
+            }
+        }
+        private bool PacifyAnimal(DaggerfallEntityBehaviour creature, RaycastHit hitInfo, int pacifyChance)
+        {
+            var playerEntity = GameManager.Instance.PlayerEntity;
+            var rawMeatTemplate = 538;
+            var meatTemplate = 537;
+            var meat = GetItemInInventory(ItemGroups.UselessItems2, rawMeatTemplate); //raw meat
+            if (meat == null)
+                meat = GetItemInInventory(ItemGroups.UselessItems2, meatTemplate); // meat
+            if (meat == null)
+                return true;
+
+            //remove meat before checking if it pacified animal
+            if (playerEntity.Items.Contains(meat))
+            {
+                if (meat.stackCount > 1)
+                    meat.stackCount--;
+                else
+                    playerEntity.Items.RemoveItem(meat);
+            }
+            else
+            {
+                if (meat.stackCount > 1)
+                    meat.stackCount--;
+                else
+                    playerEntity.WagonItems.RemoveItem(meat);
+            }
+
+            if (Dice100.SuccessRoll(pacifyChance))
+            {
+                var em = creature.GetComponent<EnemyMotor>();
+                creature.Entity.Team = MobileTeams.PlayerAlly;
+                em.IsHostile = false;
+                DaggerfallUI.AddHUDText($"I treat the {creature.Entity.Name} to a bit of {(meat.TemplateIndex == rawMeatTemplate ? "raw" : "")} meat, that seems to have pacified it. ");
+            }
+            return true;
         }
 
 
