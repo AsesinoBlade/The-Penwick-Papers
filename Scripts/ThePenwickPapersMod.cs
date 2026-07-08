@@ -14,6 +14,9 @@ using DaggerfallWorkshop.Game.Utility;
 using DaggerfallWorkshop.Game.Utility.ModSupport;
 using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using DaggerfallWorkshop.Game.Questing;
 using UnityEngine;
 
 
@@ -49,7 +52,20 @@ namespace ThePenwickPapers
             }
         }
 
-            
+        Dictionary<string, int> pacifyAnimalChances = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        [Serializable]
+        class PacifyAnimalChanceEntry
+        {
+            public string careerName;
+            public int chance;
+        }
+
+        [Serializable]
+        class PacifyAnimalChanceConfig
+        {
+            public PacifyAnimalChanceEntry[] entries;
+        }
 
         Mod firstPersonLightingMod;
 
@@ -298,6 +314,8 @@ namespace ThePenwickPapers
             Mod.LoadSettingsCallback = LoadSettings;
             Mod.LoadSettings();
 
+            LoadPacifyAnimalChances();
+
             CreateSummoningEggTexture();
 
             //Make sure all localization text keys have entries in textdatabase.txt
@@ -343,6 +361,57 @@ namespace ThePenwickPapers
             RegisterSpellsAndItems();
 
             Debug.Log("Finished Start(): The-Penwick-Papers");
+        }
+
+        void LoadPacifyAnimalChances()
+        {
+            const string meshObjectsDirectory = "DungeonActivations";
+            var filePath = Path.Combine(Application.streamingAssetsPath, meshObjectsDirectory, "ChanceToPacifyAnimals.json");
+
+            pacifyAnimalChances.Clear();
+
+            if (!File.Exists(filePath))
+            {
+                Debug.LogWarningFormat("[Penwick] Chance-to-pacify file not found at '{0}'. Using defaults.", filePath);
+                SetDefaultPacifyAnimalChances();
+                return;
+            }
+
+            try
+            {
+                var json = File.ReadAllText(filePath);
+                var config = JsonUtility.FromJson<PacifyAnimalChanceConfig>(json);
+
+                if (config == null || config.entries == null || config.entries.Length == 0)
+                {
+                    Debug.LogWarningFormat("[Penwick] Chance-to-pacify file at '{0}' is empty/invalid. Using defaults.", filePath);
+                    SetDefaultPacifyAnimalChances();
+                    return;
+                }
+
+                for (int i = 0; i < config.entries.Length; i++)
+                {
+                    var entry = config.entries[i];
+                    if (entry == null || string.IsNullOrEmpty(entry.careerName))
+                        continue;
+
+                    pacifyAnimalChances[entry.careerName] = Mathf.Clamp(entry.chance, 0, 100);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarningFormat("[Penwick] Failed reading chance-to-pacify file '{0}'. {1}. Using defaults.", filePath, ex.Message);
+                SetDefaultPacifyAnimalChances();
+            }
+        }
+
+        void SetDefaultPacifyAnimalChances()
+        {
+            pacifyAnimalChances["Dog"] = 100;
+            pacifyAnimalChances["Wolf"] = 80;
+            pacifyAnimalChances["Boar"] = 100;
+            pacifyAnimalChances["MountainLion"] = 50;
+            pacifyAnimalChances["SnowWolf"] = 40;
         }
 
         static void OnGrapplingRopeActivated(RaycastHit hit)
@@ -581,8 +650,9 @@ namespace ThePenwickPapers
 
                         PenwickMinion minion = creature.GetComponent<PenwickMinion>();
                         actionHandled = minion && minion.Activate(hitInfo.distance);
+                        var questResource = hitInfo.transform.gameObject.GetComponent<QuestResourceBehaviour>();
                         var pacifyChance = ChanceToPacify(creature);
-                        if (!actionHandled && minion == null && pacifyChance > 0)
+                        if (!actionHandled && minion == null && questResource == null && pacifyChance > 0)
                             actionHandled = PacifyAnimal(creature, hitInfo, pacifyChance);
                     }
 
@@ -621,25 +691,21 @@ namespace ThePenwickPapers
                 return playerEntity.WagonItems.GetItem(itemGroup, templateIndex);
             return null;
         }
-
         private int ChanceToPacify(DaggerfallEntityBehaviour creature)
         {
-            switch (creature.Entity.Career.Name)
-            {
-                case "Dog":
-                    return 100;
-                case "Wolf":
-                    return 80;
-                case "Boar":
-                    return 100;
-                case "MountainLion":
-                    return 50;
-                case "SnowWolf":
-                    return 40;
-                default:
-                    return 0;
-            }
+            if (creature == null || creature.Entity == null || creature.Entity.Career == null)
+                return 0;
+
+            int chance;
+            if (pacifyAnimalChances.TryGetValue(creature.Entity.Career.Name, out chance))
+                return chance;
+
+            if (pacifyAnimalChances.TryGetValue(creature.Entity.Team.ToString(), out chance))
+                return chance;
+
+            return 0;
         }
+
         private bool PacifyAnimal(DaggerfallEntityBehaviour creature, RaycastHit hitInfo, int pacifyChance)
         {
             var playerEntity = GameManager.Instance.PlayerEntity;
@@ -649,8 +715,10 @@ namespace ThePenwickPapers
             if (meat == null)
                 meat = GetItemInInventory(ItemGroups.UselessItems2, meatTemplate); // meat
             if (meat == null)
+            {
+                DaggerfallUI.AddHUDText("I wish I had some meat to feed it.");
                 return true;
-
+            }
             //remove meat before checking if it pacified animal
             if (playerEntity.Items.Contains(meat))
             {
